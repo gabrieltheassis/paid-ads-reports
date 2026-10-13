@@ -43,10 +43,6 @@
     <h1>Traffic Reports by Location</h1>
     <p class="pah-sub">Select a location to view its campaign performance.</p>
     <div class="pah-grid" id="pah-grid"></div>
-    <p class="pah-foot">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3h7v7M21 3l-9 9M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
-      Each report opens in a new tab.
-    </p>
   </div>
 </div>
 
@@ -70,7 +66,7 @@
     PAH_UNIDADES.forEach(function (u) {
       var a = document.createElement("a");
       a.className = "pah-card" + (u.link ? "" : " is-empty");
-      if (u.link) { a.href = u.link; a.target = "_blank"; a.rel = "noopener"; }
+      if (u.link) { a.href = u.link; a.target = "_top"; }
       a.innerHTML =
         '<div class="pah-badge"></div>' +
         '<div class="pah-info"><p class="pah-name"></p><p class="pah-loc"></p></div>' +
