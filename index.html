@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paid Ads Reports</title>
+</head>
+<body style="margin:0;background:#f5f6f8;">
+
+<!-- ===== COPY FROM HERE (Sales Loop Custom HTML/Code block) ===== -->
+<style>
+  .pah{--bg:#f5f6f8;--card:#fff;--ink:#14171f;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb;--accent-soft:#eff4ff;
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);
+    background:var(--bg);min-height:100vh;padding:48px 16px;box-sizing:border-box}
+  .pah *{box-sizing:border-box}
+  .pah-wrap{max-width:960px;margin:0 auto}
+  .pah-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:6px 10px;border-radius:999px}
+  .pah-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .pah h1{font-size:28px;line-height:1.2;margin:14px 0 6px;font-weight:700}
+  .pah-sub{margin:0 0 32px;color:var(--muted);font-size:15px}
+  .pah-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .pah-card{display:flex;align-items:center;gap:14px;padding:18px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s}
+  .pah-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(20,23,31,.08);border-color:var(--accent)}
+  .pah-card:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+  .pah-badge{flex:0 0 44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:15px;
+    color:var(--accent);background:var(--accent-soft)}
+  .pah-info{flex:1;min-width:0}
+  .pah-name{font-weight:600;font-size:16px;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pah-loc{font-size:13px;color:var(--muted);margin:0}
+  .pah-go{flex:0 0 auto;font-size:13px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px}
+  .pah-go svg{transition:transform .15s}
+  .pah-card:hover .pah-go svg{transform:translateX(3px)}
+  .pah-card.is-empty{opacity:.55;pointer-events:none}
+  .pah-foot{margin-top:28px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
+  @media (max-width:520px){.pah{padding:28px 16px}.pah h1{font-size:23px}.pah-go span{display:none}}
+</style>
+
+<div class="pah">
+  <div class="pah-wrap">
+    <span class="pah-eyebrow"><span class="pah-dot"></span>Paid Ads</span>
+    <h1>Traffic Reports by Location</h1>
+    <p class="pah-sub">Select a location to view its campaign performance.</p>
+    <div class="pah-grid" id="pah-grid"></div>
+    <p class="pah-foot">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3h7v7M21 3l-9 9M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
+      Each report opens in a new tab.
+    </p>
+  </div>
+</div>
+
+<script>
+  /* ===== EDIT HERE: location name, city and report link ===== */
+  var PAH_UNIDADES = [
+    { nome: "Location 1", local: "City, State", link: "" },
+    { nome: "Location 2", local: "City, State", link: "" },
+    { nome: "Location 3", local: "City, State", link: "" },
+    { nome: "Location 4", local: "City, State", link: "" },
+    { nome: "Location 5", local: "City, State", link: "" },
+    { nome: "Location 6", local: "City, State", link: "" }
+  ];
+
+  (function () {
+    var grid = document.getElementById("pah-grid");
+    var arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    function initials(n) {
+      return n.split(/\s+/).filter(Boolean).slice(0, 2).map(function (p) { return p[0]; }).join("").toUpperCase();
+    }
+    PAH_UNIDADES.forEach(function (u) {
+      var a = document.createElement("a");
+      a.className = "pah-card" + (u.link ? "" : " is-empty");
+      if (u.link) { a.href = u.link; a.target = "_blank"; a.rel = "noopener"; }
+      a.innerHTML =
+        '<div class="pah-badge"></div>' +
+        '<div class="pah-info"><p class="pah-name"></p><p class="pah-loc"></p></div>' +
+        '<div class="pah-go"><span>' + (u.link ? "View report" : "Coming soon") + "</span>" + arrow + "</div>";
+      a.querySelector(".pah-badge").textContent = initials(u.nome);
+      a.querySelector(".pah-name").textContent = u.nome;
+      a.querySelector(".pah-loc").textContent = u.local;
+      grid.appendChild(a);
+    });
+  })();
+</script>
+<!-- ===== COPY UNTIL HERE ===== -->
+
+</body>
+</html>
