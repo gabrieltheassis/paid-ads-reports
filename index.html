@@ -7,30 +7,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;background:#ffffff;">
+<body style="margin:0;background:#fafaf9;">
 
 <!-- ===== COPY FROM HERE (Sales Loop Custom HTML/Code block) ===== -->
 <style>
-  .pah{--ink:#0b0b0c;--ink2:#3f3f46;--muted:#71717a;--faint:#a1a1aa;--line:#e4e4e7;--soft:#f6f6f7;
-    --yellow:#f5b70a;--yellow-soft:#fff7db;--ok:#16a34a;
-    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:#fff;
+  .pah{--ink:#1c1917;--ink2:#44403c;--muted:#78716c;--faint:#a8a29e;--line:#e7e5e4;--soft:#f5f5f4;--page:#fafaf9;
+    --yellow:#eab308;--yellow-soft:#fefce8;--yellow-line:#fde68a;--amber-ink:#854d0e;--ok:#22c55e;
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);background:var(--page);
     font-size:15px;line-height:1.5;min-height:100vh;padding:32px 32px 48px;-webkit-font-smoothing:antialiased}
   .pah *{box-sizing:border-box}
   .pah-wrap{max-width:1080px;margin:0 auto}
 
   /* Header */
   .pah-hero{position:relative;overflow:hidden;border-radius:14px;padding:28px 30px;color:#fff;
-    background:linear-gradient(120deg,#0b0b0c 0%,#18181b 60%,#27272a 100%);margin-bottom:24px}
+    background:linear-gradient(135deg,#1c1917 0%,#292524 100%);margin-bottom:24px;box-shadow:0 1px 2px rgba(28,25,23,.06)}
   .pah-hero::after{content:"";position:absolute;right:-80px;top:-100px;width:380px;height:380px;border-radius:50%;
-    background:radial-gradient(circle,rgba(245,183,10,.25),transparent 65%)}
-  .pah-new{display:inline-block;font-size:11px;font-weight:800;color:#0b0b0c;background:var(--yellow);padding:3px 8px;border-radius:4px;letter-spacing:.04em;position:relative}
+    background:radial-gradient(circle,rgba(234,179,8,.18),transparent 65%)}
+  .pah-new{display:inline-block;font-size:11px;font-weight:800;color:#1c1917;background:var(--yellow);padding:3px 8px;border-radius:4px;letter-spacing:.04em;position:relative}
   .pah-hero h1{font-size:28px;font-weight:800;margin:12px 0 6px;letter-spacing:-.01em;position:relative}
-  .pah-hero p{margin:0;color:#d4d4d8;font-size:16px;position:relative;max-width:620px}
+  .pah-hero p{margin:0;color:#d6d3d1;font-size:16px;position:relative;max-width:620px}
 
   /* Steps */
   .pah-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
-  .pah-step{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff}
-  .pah-step b{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:800;background:#0b0b0c;color:var(--yellow)}
+  .pah-step{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(28,25,23,.04)}
+  .pah-step b{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:800;background:var(--yellow-soft);color:var(--amber-ink);border:1px solid var(--yellow-line)}
   .pah-step span{font-size:14px;color:var(--ink2)}
   .pah-step strong{color:var(--ink)}
 
@@ -40,38 +40,40 @@
   .pah-right{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .pah-filter{font:inherit;font-size:14px;font-weight:600;color:var(--ink2);background:#fff;border:1px solid var(--line);
     padding:9px 16px;border-radius:999px;cursor:pointer;transition:all .12s}
-  .pah-filter:hover{border-color:#a1a1aa}
-  .pah-filter.on{background:#0b0b0c;border-color:#0b0b0c;color:#fff}
+  .pah-filter:hover{border-color:var(--faint)}
+  .pah-filter.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .pah-filter em{font-style:normal;color:var(--faint);margin-left:4px}
   .pah-filter.on em{color:var(--yellow)}
   .pah-search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:0 14px;color:var(--faint);background:#fff}
-  .pah-search:focus-within{border-color:#0b0b0c}
+  .pah-search:focus-within{border-color:var(--ink)}
   .pah-search input{font:inherit;font-size:14px;color:var(--ink);border:0;outline:0;background:transparent;padding:9px 0;width:170px}
 
   /* Cards */
   .pah-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   .pah-card{display:flex;flex-direction:column;gap:18px;padding:22px;border:1px solid var(--line);border-radius:14px;background:#fff;
-    text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s;cursor:pointer}
-  .pah-card:hover{transform:translateY(-3px);border-color:#0b0b0c;box-shadow:0 12px 28px rgba(0,0,0,.08)}
+    text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s;cursor:pointer;box-shadow:0 1px 2px rgba(28,25,23,.04)}
+  .pah-card:hover{transform:translateY(-3px);border-color:var(--yellow-line);box-shadow:0 12px 28px rgba(28,25,23,.08)}
   .pah-card:focus-visible{outline:3px solid var(--yellow);outline-offset:3px}
   .pah-top{display:flex;align-items:center;gap:14px}
-  .pah-av{flex:0 0 52px;height:52px;border-radius:12px;display:grid;place-items:center;font-size:18px;font-weight:800;background:#0b0b0c;color:var(--yellow)}
+  .pah-av{flex:0 0 52px;height:52px;border-radius:12px;display:grid;place-items:center;font-size:18px;font-weight:800;background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+  .pah-card:hover .pah-av{background:var(--yellow-soft);border-color:var(--yellow-line);color:var(--amber-ink)}
   .pah-name{font-size:19px;font-weight:700;margin:0;line-height:1.25}
   .pah-loc{font-size:14px;color:var(--muted);margin:2px 0 0;display:flex;align-items:center;gap:5px}
   .pah-ready{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink2)}
   .pah-ready i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
-  .pah-btn{display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:700;color:#fff;background:#0b0b0c;
-    padding:14px 16px;border-radius:10px;transition:background .15s}
-  .pah-btn svg{color:var(--yellow);transition:transform .15s}
-  .pah-card:hover .pah-btn svg{transform:translateX(4px)}
+  .pah-btn{display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:700;color:var(--ink);background:#fff;border:1px solid var(--line);
+    padding:13px 16px;border-radius:10px;transition:background .15s,color .15s,border-color .15s}
+  .pah-card:hover .pah-btn{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .pah-btn svg{color:var(--muted);transition:transform .15s}
+  .pah-card:hover .pah-btn svg{transform:translateX(4px);color:var(--yellow)}
   .pah-card.is-empty{cursor:default;opacity:.6}
-  .pah-card.is-empty:hover{transform:none;box-shadow:none;border-color:var(--line)}
+  .pah-card.is-empty:hover{transform:none;border-color:var(--line)}
   .pah-card.is-empty .pah-btn{background:var(--soft);color:var(--muted)}
   .pah-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px;border:1px dashed var(--line);border-radius:14px}
 
   /* Help */
-  .pah-help{margin-top:28px;display:flex;gap:12px;align-items:flex-start;padding:16px 18px;border-radius:12px;background:var(--yellow-soft);border:1px solid #f3e2a6;font-size:14px;color:#5b4a12}
-  .pah-help svg{flex:0 0 20px;color:#b98500;margin-top:1px}
+  .pah-help{margin-top:28px;display:flex;gap:12px;align-items:flex-start;padding:16px 18px;border-radius:12px;background:var(--yellow-soft);border:1px solid var(--yellow-line);font-size:14px;color:var(--amber-ink)}
+  .pah-help svg{flex:0 0 20px;color:var(--yellow);margin-top:1px}
 
   @media (max-width:900px){.pah-grid{grid-template-columns:repeat(2,1fr)}.pah-steps{grid-template-columns:1fr}}
   @media (max-width:600px){.pah{padding:16px 16px 32px}.pah-hero{padding:22px 20px}.pah-hero h1{font-size:23px}
@@ -155,7 +157,7 @@
       top.querySelector(".pah-name").textContent = u.nome;
       top.querySelector(".pah-loc span").textContent = u.local ? (STATES[u.local] || u.local) : "Store";
       a.appendChild(top);
-      a.appendChild(el("span", "pah-ready", u.link ? "<i></i>Report ready" : "<i style='background:#a1a1aa'></i>Report coming soon"));
+      a.appendChild(el("span", "pah-ready", u.link ? "<i></i>Report ready" : "<i style='background:#a8a29e'></i>Report coming soon"));
       a.appendChild(el("div", "pah-btn", (u.link ? "View results " + arrow : "Not available yet")));
       return a;
     }
