@@ -85,22 +85,22 @@
 
     <section class="pah-hero">
       <span class="pah-new">NEW</span>
-      <h1>Your ad results, by store</h1>
-      <p>See how the ads are performing for each store. Just click a store below to open its report.</p>
+      <h1>Your ad results, by location</h1>
+      <p>See how the ads are performing for each location. Just click a location below to open its report.</p>
     </section>
 
     <section class="pah-steps">
-      <div class="pah-step"><b>1</b><span><strong>Pick a store</strong> from the list below</span></div>
+      <div class="pah-step"><b>1</b><span><strong>Pick a location</strong> from the list below</span></div>
       <div class="pah-step"><b>2</b><span><strong>Click "View results"</strong> to open the report</span></div>
       <div class="pah-step"><b>3</b><span><strong>Come back</strong> with your browser's Back button</span></div>
     </section>
 
     <div class="pah-tools">
-      <h2>Choose a store</h2>
+      <h2>Choose a location</h2>
       <div class="pah-right" id="pah-filters">
         <label class="pah-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input id="pah-q" type="search" placeholder="Type a store name…" aria-label="Find a store">
+          <input id="pah-q" type="search" placeholder="Type a location name…" aria-label="Find a location">
         </label>
       </div>
     </div>
@@ -109,7 +109,7 @@
 
     <div class="pah-help">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
-      <div><strong>Need help?</strong> Each report shows the ad numbers for that store: how many people saw the ads, clicked, and contacted you. If a report doesn't load, refresh the page or contact your account manager.</div>
+      <div><strong>Need help?</strong> Each report shows the ad numbers for that location: how many people saw the ads, clicked, and contacted you. If a report doesn't load, refresh the page or contact your account manager.</div>
     </div>
   </div>
 </div>
@@ -138,7 +138,7 @@
 
     // Filters
     var cur = "ALL", wrap = document.getElementById("pah-filters"), search = wrap.lastElementChild;
-    [["ALL", "All stores", list.length]].concat(keys.map(function (k) { return [k, STATES[k] || k, counts[k]]; })).forEach(function (f, i) {
+    [["ALL", "All locations", list.length]].concat(keys.map(function (k) { return [k, STATES[k] || k, counts[k]]; })).forEach(function (f, i) {
       var b = el("button", "pah-filter" + (i ? "" : " on"), "<span></span><em>" + f[2] + "</em>");
       b.type = "button"; b.querySelector("span").textContent = f[1];
       b.onclick = function () { cur = f[0]; [].forEach.call(wrap.querySelectorAll(".pah-filter"), function (x) { x.classList.remove("on"); }); b.classList.add("on"); render(); };
@@ -155,7 +155,7 @@
       var top = el("div", "pah-top", '<div class="pah-av"></div><div><p class="pah-name"></p><p class="pah-loc">' + pin + '<span></span></p></div>');
       top.querySelector(".pah-av").textContent = initials(u.nome);
       top.querySelector(".pah-name").textContent = u.nome;
-      top.querySelector(".pah-loc span").textContent = u.local ? (STATES[u.local] || u.local) : "Store";
+      top.querySelector(".pah-loc span").textContent = u.local ? (STATES[u.local] || u.local) : "Location";
       a.appendChild(top);
       a.appendChild(el("span", "pah-ready", u.link ? "<i></i>Report ready" : "<i style='background:#a8a29e'></i>Report coming soon"));
       a.appendChild(el("div", "pah-btn", (u.link ? "View results " + arrow : "Not available yet")));
@@ -169,7 +169,7 @@
         if (q && (u.nome + " " + (STATES[u.local] || "")).toLowerCase().indexOf(q) < 0) return;
         grid.appendChild(card(u)); n++;
       });
-      if (!n) grid.appendChild(el("div", "pah-empty", "No store found. Try another name or click \"All stores\"."));
+      if (!n) grid.appendChild(el("div", "pah-empty", "No location found. Try another name or click \"All locations\"."));
     }
     render();
   })();
