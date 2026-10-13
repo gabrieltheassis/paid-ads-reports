@@ -75,6 +75,18 @@
   .pah-help{margin-top:28px;display:flex;gap:12px;align-items:flex-start;padding:16px 18px;border-radius:12px;background:var(--yellow-soft);border:1px solid var(--yellow-line);font-size:14px;color:var(--amber-ink)}
   .pah-help svg{flex:0 0 20px;color:var(--yellow);margin-top:1px}
 
+  /* In-page report viewer (keeps the user inside the CRM) */
+  .pah-view{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;background:var(--page)}
+  .pah.is-viewing .pah-view{display:flex}
+  .pah.is-viewing .pah-wrap{display:none}
+  .pah-bar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
+  .pah-back{font:inherit;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:6px;color:#fff;background:var(--ink);
+    border:0;padding:9px 14px;border-radius:999px;cursor:pointer}
+  .pah-back:hover{background:#292524}
+  .pah-back:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+  .pah-vt{font-size:16px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pah-frame{flex:1;width:100%;border:0;background:#fff}
+
   @media (max-width:900px){.pah-grid{grid-template-columns:repeat(2,1fr)}.pah-steps{grid-template-columns:1fr}}
   @media (max-width:600px){.pah{padding:16px 16px 32px}.pah-hero{padding:22px 20px}.pah-hero h1{font-size:23px}
     .pah-grid{grid-template-columns:1fr}.pah-search{flex:1}.pah-search input{width:100%}}
@@ -92,7 +104,7 @@
     <section class="pah-steps">
       <div class="pah-step"><b>1</b><span><strong>Pick a location</strong> from the list below</span></div>
       <div class="pah-step"><b>2</b><span><strong>Click "View results"</strong> to open the report</span></div>
-      <div class="pah-step"><b>3</b><span><strong>Come back</strong> with your browser's Back button</span></div>
+      <div class="pah-step"><b>3</b><span><strong>Come back</strong> with the "All locations" button at the top</span></div>
     </section>
 
     <div class="pah-tools">
@@ -111,6 +123,17 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
       <div><strong>Need help?</strong> Each report shows the ad numbers for that location: how many people saw the ads, clicked, and contacted you. If a report doesn't load, refresh the page or contact your account manager.</div>
     </div>
+  </div>
+
+  <div class="pah-view" id="pah-view" aria-hidden="true">
+    <div class="pah-bar">
+      <button type="button" class="pah-back" id="pah-back">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+        All locations
+      </button>
+      <div class="pah-vt" id="pah-vt"></div>
+    </div>
+    <iframe class="pah-frame" id="pah-frame" title="Ad results report" loading="lazy" allow="fullscreen; clipboard-write"></iframe>
   </div>
 </div>
 
@@ -150,7 +173,7 @@
     var grid = document.getElementById("pah-grid");
     function card(u) {
       var a = el("a", "pah-card" + (u.link ? "" : " is-empty"));
-      if (u.link) { a.href = u.link; a.target = "_top"; }
+      if (u.link) { a.href = "#r=" + list.indexOf(u); }
       a.setAttribute("aria-label", "View ad results for " + u.nome);
       var top = el("div", "pah-top", '<div class="pah-av"></div><div><p class="pah-name"></p><p class="pah-loc">' + pin + '<span></span></p></div>');
       top.querySelector(".pah-av").textContent = initials(u.nome);
@@ -172,6 +195,26 @@
       if (!n) grid.appendChild(el("div", "pah-empty", "No location found. Try another name or click \"All locations\"."));
     }
     render();
+
+    // Viewer: opens the report inside this page, so the user never leaves the CRM
+    var root = document.querySelector(".pah"), view = document.getElementById("pah-view"),
+        frame = document.getElementById("pah-frame"), title = document.getElementById("pah-vt");
+    function route() {
+      var m = /^#r=(\d+)$/.exec(location.hash), u = m && list[+m[1]];
+      if (u && u.link) {
+        if (frame.getAttribute("src") !== u.link) frame.setAttribute("src", u.link);
+        title.textContent = u.nome + " — Ad results";
+        root.classList.add("is-viewing"); view.setAttribute("aria-hidden", "false");
+      } else {
+        root.classList.remove("is-viewing"); view.setAttribute("aria-hidden", "true");
+      }
+    }
+    document.getElementById("pah-back").onclick = function () {
+      history.replaceState(null, "", location.pathname + location.search);
+      route();
+    };
+    window.addEventListener("hashchange", route);
+    route();
   })();
 </script>
 <!-- ===== COPY UNTIL HERE ===== -->
