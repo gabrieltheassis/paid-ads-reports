@@ -4,78 +4,286 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paid Ads Reports</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;background:#f5f6f8;">
+<body style="margin:0;background:#0b1020;">
 
 <!-- ===== COPY FROM HERE (Sales Loop Custom HTML/Code block) ===== -->
 <style>
-  .pah{--bg:#f5f6f8;--card:#fff;--ink:#14171f;--muted:#6b7280;--line:#e5e7eb;--accent:#2563eb;--accent-soft:#eff4ff;
+  .pah{--bg:#0b1020;--bg2:#10172b;--card:#131b31;--card2:#18213b;--ink:#eef2ff;--muted:#8b95b2;--line:#222c48;
+    --accent:#4f7cff;--accent2:#22d3ee;--ok:#22c55e;--warn:#f59e0b;
     font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);
-    background:var(--bg);min-height:100vh;padding:48px 16px;box-sizing:border-box}
+    background:radial-gradient(1200px 500px at 10% -10%,rgba(79,124,255,.22),transparent 60%),
+               radial-gradient(900px 400px at 100% 0%,rgba(34,211,238,.12),transparent 60%),var(--bg);
+    min-height:100vh;padding:40px 16px 56px;box-sizing:border-box}
   .pah *{box-sizing:border-box}
-  .pah-wrap{max-width:960px;margin:0 auto}
-  .pah-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:6px 10px;border-radius:999px}
-  .pah-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
-  .pah h1{font-size:28px;line-height:1.2;margin:14px 0 6px;font-weight:700}
-  .pah-sub{margin:0 0 32px;color:var(--muted);font-size:15px}
-  .pah-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-  .pah-card{display:flex;align-items:center;gap:14px;padding:18px;background:var(--card);border:1px solid var(--line);
-    border-radius:14px;text-decoration:none;color:inherit;transition:transform .15s,box-shadow .15s,border-color .15s}
-  .pah-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(20,23,31,.08);border-color:var(--accent)}
-  .pah-card:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-  .pah-badge{flex:0 0 44px;height:44px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:15px;
-    color:var(--accent);background:var(--accent-soft)}
+  .pah-wrap{max-width:1120px;margin:0 auto}
+
+  /* Header */
+  .pah-top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:28px}
+  .pah-eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;color:#c7d4ff;background:rgba(79,124,255,.14);border:1px solid rgba(79,124,255,.35);
+    padding:6px 11px;border-radius:999px}
+  .pah-live{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pahPulse 2s infinite}
+  @keyframes pahPulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  .pah h1{font-size:34px;line-height:1.15;margin:14px 0 8px;font-weight:800;letter-spacing:-.02em}
+  .pah h1 span{background:linear-gradient(90deg,#8fb0ff,#5eead4);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .pah-sub{margin:0;color:var(--muted);font-size:15px;max-width:560px;line-height:1.55}
+  .pah-meta{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .pah-chip{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink);
+    background:var(--card);border:1px solid var(--line);padding:9px 13px;border-radius:10px}
+  .pah-chip svg{color:var(--accent2)}
+  .pah-clock{font-size:12px;color:var(--muted)}
+
+  /* KPI strip */
+  .pah-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+  .pah-kpi{position:relative;overflow:hidden;background:linear-gradient(180deg,var(--card2),var(--card));
+    border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px}
+  .pah-kpi::after{content:"";position:absolute;inset:auto -30% -60% auto;width:140px;height:140px;border-radius:50%;
+    background:radial-gradient(circle,rgba(79,124,255,.18),transparent 70%)}
+  .pah-kpi-label{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .pah-kpi-ico{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:rgba(79,124,255,.15);color:#9db6ff}
+  .pah-kpi-val{font-size:30px;font-weight:800;margin-top:12px;letter-spacing:-.02em}
+  .pah-kpi-foot{font-size:12px;color:var(--muted);margin-top:4px}
+  .pah-bar{height:6px;border-radius:99px;background:#1d2742;margin-top:10px;overflow:hidden}
+  .pah-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+  /* Toolbar */
+  .pah-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .pah-h2{font-size:18px;font-weight:700;margin:0;display:flex;align-items:center;gap:10px}
+  .pah-count{font-size:12px;font-weight:700;color:#c7d4ff;background:rgba(79,124,255,.16);padding:3px 9px;border-radius:99px}
+  .pah-filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pah-filter{font:inherit;font-size:13px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);
+    padding:8px 13px;border-radius:9px;cursor:pointer;transition:all .15s}
+  .pah-filter:hover{color:var(--ink);border-color:#33406a}
+  .pah-filter.on{color:#fff;background:var(--accent);border-color:var(--accent)}
+  .pah-search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:9px;padding:0 11px;color:var(--muted)}
+  .pah-search input{font:inherit;font-size:13px;color:var(--ink);background:transparent;border:0;outline:0;padding:9px 0;width:150px}
+  .pah-search:focus-within{border-color:var(--accent)}
+
+  /* Cards */
+  .pah-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .pah-card{position:relative;display:flex;flex-direction:column;gap:16px;padding:20px;background:var(--card);
+    border:1px solid var(--line);border-radius:18px;text-decoration:none;color:inherit;overflow:hidden;
+    transition:transform .18s,box-shadow .18s,border-color .18s}
+  .pah-card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,var(--c1),var(--c2))}
+  .pah-card:hover{transform:translateY(-4px);border-color:#3a4a7a;box-shadow:0 18px 40px rgba(0,0,0,.35)}
+  .pah-card:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+  .pah-card-top{display:flex;align-items:center;gap:14px}
+  .pah-badge{flex:0 0 48px;height:48px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:16px;color:#fff;
+    background:linear-gradient(135deg,var(--c1),var(--c2));box-shadow:0 8px 20px rgba(0,0,0,.3)}
   .pah-info{flex:1;min-width:0}
-  .pah-name{font-weight:600;font-size:16px;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pah-loc{font-size:13px;color:var(--muted);margin:0}
-  .pah-go{flex:0 0 auto;font-size:13px;font-weight:600;color:var(--accent);display:flex;align-items:center;gap:4px}
-  .pah-go svg{transition:transform .15s}
-  .pah-card:hover .pah-go svg{transform:translateX(3px)}
+  .pah-name{font-weight:700;font-size:17px;margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pah-loc{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);margin:0}
+  .pah-status{font-size:11px;font-weight:700;padding:4px 9px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .pah-status.live{color:#86efac;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3)}
+  .pah-status.soon{color:#fcd34d;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3)}
+  .pah-status i{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pah-tags{display:flex;gap:6px;flex-wrap:wrap}
+  .pah-tag{font-size:11px;font-weight:600;color:#b9c4e4;background:var(--bg2);border:1px solid var(--line);padding:4px 8px;border-radius:7px}
+  .pah-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .pah-stat{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:10px}
+  .pah-stat b{display:block;font-size:15px;font-weight:700}
+  .pah-stat span{font-size:11px;color:var(--muted)}
+  .pah-cta{margin-top:auto;display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;
+    color:#fff;background:rgba(79,124,255,.12);border:1px solid rgba(79,124,255,.35);padding:12px 14px;border-radius:12px;transition:all .18s}
+  .pah-card:hover .pah-cta{background:var(--accent);border-color:var(--accent)}
+  .pah-cta svg{transition:transform .18s}
+  .pah-card:hover .pah-cta svg{transform:translateX(4px)}
   .pah-card.is-empty{opacity:.55;pointer-events:none}
-  .pah-foot{margin-top:28px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
-  @media (max-width:520px){.pah{padding:28px 16px}.pah h1{font-size:23px}.pah-go span{display:none}}
+  .pah-card.is-empty .pah-cta{background:transparent;border-style:dashed;color:var(--muted)}
+  .pah-empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px;border:1px dashed var(--line);border-radius:16px}
+
+  .pah-foot{margin-top:32px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;
+    gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+
+  @media (max-width:960px){.pah-grid{grid-template-columns:repeat(2,1fr)}.pah-kpis{grid-template-columns:repeat(2,1fr)}}
+  @media (max-width:620px){.pah{padding:28px 16px 40px}.pah h1{font-size:26px}.pah-grid{grid-template-columns:1fr}
+    .pah-meta{align-items:flex-start}.pah-search input{width:110px}}
 </style>
 
 <div class="pah">
   <div class="pah-wrap">
-    <span class="pah-eyebrow"><span class="pah-dot"></span>Paid Ads</span>
-    <h1>Traffic Reports by Location</h1>
-    <p class="pah-sub">Select a location to view its campaign performance.</p>
+
+    <header class="pah-top">
+      <div>
+        <span class="pah-eyebrow"><span class="pah-live"></span>Paid Ads · Performance Hub</span>
+        <h1>Traffic Reports <span>by Location</span></h1>
+        <p class="pah-sub">Central overview of every paid media account. Pick a location below to open its full campaign report.</p>
+      </div>
+      <div class="pah-meta">
+        <span class="pah-chip">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span id="pah-today"></span>
+        </span>
+        <span class="pah-clock" id="pah-period"></span>
+      </div>
+    </header>
+
+    <section class="pah-kpis" id="pah-kpis"></section>
+
+    <div class="pah-tools">
+      <h2 class="pah-h2">Locations <span class="pah-count" id="pah-count"></span></h2>
+      <div class="pah-filters" id="pah-filters">
+        <label class="pah-search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="pah-q" type="search" placeholder="Search location" aria-label="Search location">
+        </label>
+      </div>
+    </div>
+
     <div class="pah-grid" id="pah-grid"></div>
+
+    <footer class="pah-foot">
+      <span>Reports powered by Reportei · Data refreshed inside each report</span>
+      <span id="pah-foot-count"></span>
+    </footer>
   </div>
 </div>
 
 <script>
-  /* ===== EDIT HERE: location name, city and report link ===== */
+  /* ===== EDIT HERE ===================================================
+     nome: button name | local: state (MA, CT...) | link: report URL
+     plataformas: e.g. ["Google Ads","Meta Ads"]  (optional)
+     investimento / leads / cliques: numbers (optional — leave null to hide)
+     =================================================================== */
+  var PAH_CONFIG = {
+    periodo: "Reporting period: last 30 days"
+  };
+
   var PAH_UNIDADES = [
-    { nome: "Marlborough", local: "MA", link: "https://app.reportei.com/dashboard/d7vNLcNWOUJGO5Pjbmfzm3r62F2fUTOo" },
-    { nome: "Medford", local: "MA", link: "https://app.reportei.com/dashboard/p3Vfhsntv2q4qactebgFDs1sZikDXSz6" },
-    { nome: "Mitsubishi", local: "MA", link: "https://app.reportei.com/dashboard/ArYi0KtxGVkExMOEz0Hxz4Ro1Qga6ZiP" },
-    { nome: "Doug Car", local: "", link: "https://app.reportei.com/dashboard/U7nUsa3n37aeS4u6grftnmsdg5Q9S4OC" },
-    { nome: "Nissan", local: "MA", link: "https://app.reportei.com/dashboard/lIYhRh7KdUUqYgsmQBnNzNEE3qW0C8yx" },
-    { nome: "Danbury", local: "CT", link: "https://app.reportei.com/dashboard/S59bnDMZRhAelP5lpkpxKSUyI29S1ZtX" }
+    { nome: "Marlborough", local: "MA", link: "https://app.reportei.com/dashboard/d7vNLcNWOUJGO5Pjbmfzm3r62F2fUTOo", plataformas: [], investimento: null, leads: null, cliques: null },
+    { nome: "Medford",     local: "MA", link: "https://app.reportei.com/dashboard/p3Vfhsntv2q4qactebgFDs1sZikDXSz6", plataformas: [], investimento: null, leads: null, cliques: null },
+    { nome: "Mitsubishi",  local: "MA", link: "https://app.reportei.com/dashboard/ArYi0KtxGVkExMOEz0Hxz4Ro1Qga6ZiP", plataformas: [], investimento: null, leads: null, cliques: null },
+    { nome: "Doug Car",    local: "",   link: "https://app.reportei.com/dashboard/U7nUsa3n37aeS4u6grftnmsdg5Q9S4OC", plataformas: [], investimento: null, leads: null, cliques: null },
+    { nome: "Nissan",      local: "MA", link: "https://app.reportei.com/dashboard/lIYhRh7KdUUqYgsmQBnNzNEE3qW0C8yx", plataformas: [], investimento: null, leads: null, cliques: null },
+    { nome: "Danbury",     local: "CT", link: "https://app.reportei.com/dashboard/S59bnDMZRhAelP5lpkpxKSUyI29S1ZtX", plataformas: [], investimento: null, leads: null, cliques: null }
   ];
 
   (function () {
-    var grid = document.getElementById("pah-grid");
-    var arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-    function initials(n) {
-      return n.split(/\s+/).filter(Boolean).slice(0, 2).map(function (p) { return p[0]; }).join("").toUpperCase();
-    }
-    PAH_UNIDADES.forEach(function (u) {
-      var a = document.createElement("a");
-      a.className = "pah-card" + (u.link ? "" : " is-empty");
-      if (u.link) { a.href = u.link; a.target = "_top"; }
-      a.innerHTML =
-        '<div class="pah-badge"></div>' +
-        '<div class="pah-info"><p class="pah-name"></p><p class="pah-loc"></p></div>' +
-        '<div class="pah-go"><span>' + (u.link ? "View report" : "Coming soon") + "</span>" + arrow + "</div>";
-      a.querySelector(".pah-badge").textContent = initials(u.nome);
-      a.querySelector(".pah-name").textContent = u.nome;
-      a.querySelector(".pah-loc").textContent = u.local;
-      grid.appendChild(a);
+    var STATES = { MA: "Massachusetts", CT: "Connecticut", NH: "New Hampshire", RI: "Rhode Island", NY: "New York", FL: "Florida" };
+    var PALETTE = [["#4f7cff","#22d3ee"],["#8b5cf6","#ec4899"],["#06b6d4","#10b981"],["#f59e0b","#ef4444"],["#3b82f6","#8b5cf6"],["#14b8a6","#4f7cff"]];
+    var arrow = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    var pin = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+    var icons = {
+      loc: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+      live: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 5-6"/></svg>',
+      map: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
+      money: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+      leads: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 11l2 2 4-4"/></svg>'
+    };
+
+    function initials(n) { return n.split(/\s+/).filter(Boolean).slice(0, 2).map(function (p) { return p[0]; }).join("").toUpperCase(); }
+    function has(v) { return typeof v === "number" && !isNaN(v); }
+    function money(v) { return "$" + v.toLocaleString("en-US", { maximumFractionDigits: 0 }); }
+    function num(v) { return v.toLocaleString("en-US"); }
+    function el(tag, cls, html) { var e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; }
+
+    var list = PAH_UNIDADES;
+    var live = list.filter(function (u) { return u.link; }).length;
+    var states = {};
+    list.forEach(function (u) { if (u.local) states[u.local] = true; });
+    var stateKeys = Object.keys(states).sort();
+
+    // Header meta
+    document.getElementById("pah-today").textContent = new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    document.getElementById("pah-period").textContent = PAH_CONFIG.periodo || "";
+
+    // KPI strip (only real values; spend/leads appear once filled in)
+    var spend = 0, leads = 0, anySpend = false, anyLeads = false;
+    list.forEach(function (u) { if (has(u.investimento)) { spend += u.investimento; anySpend = true; } if (has(u.leads)) { leads += u.leads; anyLeads = true; } });
+    var kpis = [
+      { ico: icons.loc, label: "Locations", val: list.length, foot: "Accounts managed" },
+      { ico: icons.live, label: "Live reports", val: live + "/" + list.length, foot: Math.round(live / list.length * 100) + "% connected", bar: live / list.length },
+      { ico: icons.map, label: "States", val: stateKeys.length, foot: stateKeys.map(function (s) { return STATES[s] || s; }).join(" · ") }
+    ];
+    if (anySpend) kpis.push({ ico: icons.money, label: "Total spend", val: money(spend), foot: PAH_CONFIG.periodo || "" });
+    else if (anyLeads) kpis.push({ ico: icons.leads, label: "Total leads", val: num(leads), foot: PAH_CONFIG.periodo || "" });
+    else kpis.push({ ico: icons.leads, label: "Report access", val: "1-click", foot: "Opens the full dashboard" });
+    if (anySpend && anyLeads) kpis.push({ ico: icons.leads, label: "Total leads", val: num(leads), foot: leads ? "Avg CPL " + money(spend / leads) : "" });
+    var kWrap = document.getElementById("pah-kpis");
+    kpis.slice(0, 4).forEach(function (k) {
+      var c = el("div", "pah-kpi");
+      c.innerHTML = '<div class="pah-kpi-label"><span class="pah-kpi-ico">' + k.ico + '</span>' + k.label + '</div>' +
+        '<div class="pah-kpi-val"></div><div class="pah-kpi-foot"></div>' + (k.bar != null ? '<div class="pah-bar"><i style="width:' + (k.bar * 100) + '%"></i></div>' : '');
+      c.querySelector(".pah-kpi-val").textContent = k.val;
+      c.querySelector(".pah-kpi-foot").textContent = k.foot;
+      kWrap.appendChild(c);
     });
+
+    // Filters
+    var filterWrap = document.getElementById("pah-filters");
+    var current = "ALL";
+    ["ALL"].concat(stateKeys).forEach(function (s, i) {
+      var b = el("button", "pah-filter" + (i === 0 ? " on" : ""));
+      b.type = "button";
+      b.textContent = s === "ALL" ? "All" : s;
+      b.onclick = function () {
+        current = s;
+        [].forEach.call(filterWrap.querySelectorAll(".pah-filter"), function (x) { x.classList.remove("on"); });
+        b.classList.add("on");
+        render();
+      };
+      filterWrap.insertBefore(b, filterWrap.lastElementChild);
+    });
+    document.getElementById("pah-q").addEventListener("input", render);
+
+    // Cards
+    var grid = document.getElementById("pah-grid");
+    function card(u, i) {
+      var p = PALETTE[i % PALETTE.length];
+      var a = el("a", "pah-card" + (u.link ? "" : " is-empty"));
+      a.style.setProperty("--c1", p[0]); a.style.setProperty("--c2", p[1]);
+      if (u.link) { a.href = u.link; a.target = "_top"; }
+      a.setAttribute("aria-label", "Open report for " + u.nome);
+
+      var top = el("div", "pah-card-top");
+      top.appendChild(el("div", "pah-badge")).textContent = initials(u.nome);
+      var info = el("div", "pah-info");
+      info.appendChild(el("p", "pah-name")).textContent = u.nome;
+      var loc = el("p", "pah-loc", pin + "<span></span>");
+      loc.querySelector("span").textContent = u.local ? (STATES[u.local] ? STATES[u.local] + " · " + u.local : u.local) : "Paid Ads account";
+      info.appendChild(loc);
+      top.appendChild(info);
+      top.appendChild(el("span", "pah-status " + (u.link ? "live" : "soon"), "<i></i>" + (u.link ? "Live" : "Soon")));
+      a.appendChild(top);
+
+      if (u.plataformas && u.plataformas.length) {
+        var tags = el("div", "pah-tags");
+        u.plataformas.forEach(function (t) { tags.appendChild(el("span", "pah-tag")).textContent = t; });
+        a.appendChild(tags);
+      }
+
+      var st = [];
+      if (has(u.investimento)) st.push([money(u.investimento), "Spend"]);
+      if (has(u.leads)) st.push([num(u.leads), "Leads"]);
+      if (has(u.investimento) && has(u.leads) && u.leads) st.push([money(u.investimento / u.leads), "CPL"]);
+      else if (has(u.cliques)) st.push([num(u.cliques), "Clicks"]);
+      if (st.length) {
+        var stats = el("div", "pah-stats");
+        st.forEach(function (s) { var d = el("div", "pah-stat", "<b></b><span></span>"); d.querySelector("b").textContent = s[0]; d.querySelector("span").textContent = s[1]; stats.appendChild(d); });
+        a.appendChild(stats);
+      }
+
+      a.appendChild(el("div", "pah-cta", "<span>" + (u.link ? "Open full report" : "Report coming soon") + "</span>" + arrow));
+      return a;
+    }
+
+    function render() {
+      var q = document.getElementById("pah-q").value.trim().toLowerCase();
+      grid.innerHTML = "";
+      var shown = 0;
+      list.forEach(function (u, i) {
+        if (current !== "ALL" && u.local !== current) return;
+        if (q && (u.nome + " " + u.local + " " + (STATES[u.local] || "")).toLowerCase().indexOf(q) === -1) return;
+        grid.appendChild(card(u, i)); shown++;
+      });
+      if (!shown) grid.appendChild(el("div", "pah-empty", "No locations match your search."));
+      document.getElementById("pah-count").textContent = shown;
+      document.getElementById("pah-foot-count").textContent = live + " of " + list.length + " reports live";
+    }
+    render();
   })();
 </script>
 <!-- ===== COPY UNTIL HERE ===== -->
