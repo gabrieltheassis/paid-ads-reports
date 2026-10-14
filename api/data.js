@@ -37,6 +37,27 @@ function todayInTZ() {
   return { y: +p.year, m: +p.month, d: +p.day };
 }
 
+const isISO = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s + "T00:00:00Z"));
+const addDays = (s, n) => new Date(Date.parse(s + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+const diffDays = (a, b) => Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 864e5);
+
+// Custom period from the query string (?start=YYYY-MM-DD&end=YYYY-MM-DD[&prevStart=…&prevEnd=…]).
+// Falls back to month-to-date. Max 92 days per request.
+function periodsFrom(q) {
+  const t = todayInTZ(), todayIso = iso(t.y, t.m, t.d);
+  if (!q || !isISO(q.start) || !isISO(q.end)) return periods();
+  let start = q.start, end = q.end > todayIso ? todayIso : q.end;
+  if (start > end) [start, end] = [end, start];
+  if (diffDays(start, end) > 91) start = addDays(end, -91);
+  const len = diffDays(start, end) + 1;
+  let prevStart, prevEnd;
+  if (isISO(q.prevStart) && isISO(q.prevEnd) && q.prevStart <= q.prevEnd) { prevStart = q.prevStart; prevEnd = q.prevEnd; }
+  else { prevEnd = addDays(start, -1); prevStart = addDays(prevEnd, -(len - 1)); }
+  const dates = [];
+  for (let i = 0; i < len; i++) dates.push(addDays(start, i));
+  return { start, end, prevStart, prevEnd, dates };
+}
+
 function periods() {
   const t = todayInTZ();
   const start = iso(t.y, t.m, 1), end = iso(t.y, t.m, t.d);
@@ -90,7 +111,7 @@ module.exports = async (req, res) => {
     return;
   }
   try {
-    const p = periods();
+    const p = periodsFrom(req.query || {});
     const locs = await Promise.all(LOCATIONS.map((l) => fetchLocation(l, p, key)));
     // Cache on Vercel's edge for 5 min (keeps the page "live" without hammering the Reportei API).
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
