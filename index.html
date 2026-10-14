@@ -523,8 +523,10 @@
       var r = S.range; if (r.preset === "mtd") return "";
       return "?start=" + r.start + "&end=" + r.end + (r.prevStart ? "&prevStart=" + r.prevStart + "&prevEnd=" + r.prevEnd : "");
     }
+    /* Access code from the CRM link (?code=…) is sent with each data request, in case the browser blocks cookies inside the CRM. */
+    var ACCESS = (function () { var c = null; try { c = new URLSearchParams(location.search).get("code") || sessionStorage.getItem("pa_code"); if (c) sessionStorage.setItem("pa_code", c); } catch (e) {} return c; })();
     function getJSON(u) {
-      return fetch(u, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      return fetch(u, { cache: "no-store", headers: ACCESS ? { "x-access-code": ACCESS } : {} }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
         .then(function (d) { if (!d || !d.locs) throw new Error("bad"); return d; });
     }
     /* Offline fallback: cut the saved month data down to the chosen days (no comparison available). */
