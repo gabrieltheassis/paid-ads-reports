@@ -38,6 +38,32 @@
   .period{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--ink2);background:var(--surface);border:1px solid var(--line);padding:7px 12px;border-radius:10px}
   .period svg{color:var(--muted)}
   .top-r{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  /* period filter */
+  .per-wrap{position:relative}
+  button.period{cursor:pointer;font:inherit;font-size:13px;transition:border-color .15s,box-shadow .15s}
+  button.period:hover,button.period[aria-expanded="true"]{border-color:var(--accent-line);box-shadow:0 0 0 3px rgba(234,179,8,.10)}
+  .per-l{font-weight:600;color:var(--strong)}
+  .per-d{color:var(--muted)}
+  .per-d::before{content:"·";margin-right:6px;color:var(--faint)}
+  .chev{color:var(--muted);transition:transform .15s}
+  button.period[aria-expanded="true"] .chev{transform:rotate(180deg)}
+  .per-pop{position:absolute;right:0;top:calc(100% + 8px);z-index:40;width:360px;background:#fff;border:1px solid var(--line2);border-radius:14px;box-shadow:0 20px 50px rgba(24,24,27,.16);padding:10px;animation:popIn .14s ease-out}
+  .per-pop[hidden]{display:none}
+  @keyframes popIn{from{opacity:0;transform:translateY(-4px)}}
+  .per-presets{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .per-presets button{text-align:left;border:1px solid transparent;background:transparent;border-radius:9px;padding:9px 10px;font-size:13.5px;font-weight:500;color:var(--ink2);cursor:pointer}
+  .per-presets button:hover{background:var(--bg2)}
+  .per-presets button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-ink);font-weight:600}
+  .per-custom{padding:10px 4px 2px}
+  .per-ttl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .per-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .per-fields label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+  .per-fields input{font:inherit;font-size:13.5px;color:var(--strong);border:1px solid var(--line2);border-radius:9px;padding:8px 9px;background:#fff;min-width:0}
+  .per-fields input:focus{outline:0;border-color:var(--accent-line);box-shadow:0 0 0 3px rgba(234,179,8,.12)}
+  .per-err{font-size:12px;color:var(--bad);margin:6px 0 0;min-height:16px}
+  .per-apply{width:100%;justify-content:center;margin-top:6px}
+  .loading .kpi .v,.loading #rows,.loading .chart svg{opacity:.45;transition:opacity .2s}
+  @media (max-width:600px){.per-wrap{width:100%}button.period{display:inline-flex!important;width:100%}.per-pop{left:0;right:auto;width:100%}.per-d{display:none}}
   .status{display:inline-flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);padding:7px 12px;border-radius:10px}
   .status b{font-weight:600;color:var(--good)}
   .status.off b{color:var(--muted)}
@@ -252,6 +278,13 @@
   .money.sm{width:150px;flex:0 0 150px;border-radius:10px;padding:0 10px}
   .money.sm span{font-size:15px}.money.sm input{font-size:15px;padding:8px 0;text-align:right}
   .bud-hint.warn{color:#b45309}
+  .bud-pin{margin-bottom:12px}
+  .bud-pin input{width:100%;font:inherit;font-size:15px;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;background:#fff;color:var(--strong)}
+  .bud-pin input:focus{outline:0;border-color:var(--accent-line);box-shadow:0 0 0 3px rgba(234,179,8,.12)}
+  .bud-pin.err input{border-color:#fca5a5}
+  .bud-share{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin:0 0 14px}
+  .bud-share.on::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--live)}
+  .bud-act .btn[disabled]{opacity:.6;cursor:wait}
   .pill-st.sm{font-size:11px;padding:2px 8px}
   .bud-locs{margin-top:16px;border-top:1px solid var(--line);padding-top:4px}
   .bud-lh,.bud-lr{display:grid;grid-template-columns:minmax(140px,1.2fr) minmax(180px,2fr) 110px 100px 120px;gap:14px;align-items:center}
@@ -301,7 +334,32 @@
       </div>
     </div>
     <div class="top-r">
-      <span class="period"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span id="per">Month to date</span></span>
+      <div class="per-wrap">
+        <button type="button" class="period" id="per-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="per-pop">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+          <span class="per-l" id="per-l">This month</span><span class="per-d" id="per">—</span>
+          <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="per-pop" id="per-pop" role="dialog" aria-label="Select period" hidden>
+          <div class="per-presets" id="per-presets">
+            <button type="button" data-p="today">Today</button>
+            <button type="button" data-p="yesterday">Yesterday</button>
+            <button type="button" data-p="last7">Last 7 days</button>
+            <button type="button" data-p="last30">Last 30 days</button>
+            <button type="button" data-p="mtd">This month</button>
+            <button type="button" data-p="lastmonth">Last month</button>
+          </div>
+          <form class="per-custom" id="per-form">
+            <div class="per-ttl">Custom range</div>
+            <div class="per-fields">
+              <label>From<input type="date" id="per-from" required></label>
+              <label>To<input type="date" id="per-to" required></label>
+            </div>
+            <p class="per-err" id="per-err" role="alert"></p>
+            <button type="submit" class="btn btn-primary per-apply">Apply</button>
+          </form>
+        </div>
+      </div>
       <span class="status" id="status" role="status" aria-live="polite"><span class="dot"></span><span id="st-main"><b>Connecting…</b></span><span class="sep"></span><span class="nxt" id="st-next"></span></span>
       <button class="btn btn-primary" id="open-picker" type="button" aria-haspopup="dialog">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -338,7 +396,7 @@
 
   <div class="grid2">
     <section class="card" aria-labelledby="tbl-h">
-      <div class="card-h"><div><h2 id="tbl-h">Performance by location</h2><p>Month to date · click a row to open its report</p></div></div>
+      <div class="card-h"><div><h2 id="tbl-h">Performance by location</h2><p id="tbl-sub">This month · click a row to open its report</p></div></div>
       <div class="tw"><table>
         <thead><tr>
           <th scope="col"><button type="button" data-sort="name">Location<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 4l3-3 3 3M2 6l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg></button></th>
@@ -365,27 +423,6 @@
     <span>Source: Meta Ads via Reportei · Leads = messaging conversations started · CPL = amount spent ÷ leads</span>
     <span id="foot-r"></span>
   </footer>
-</div>
-
-<!-- Budget editor -->
-<div class="ov" id="bud-ov" aria-hidden="true">
-  <div class="dlg bud-dlg" role="dialog" aria-modal="true" aria-labelledby="bud-h">
-    <div class="dlg-h">
-      <div><h2 id="bud-h">Monthly budget</h2><p id="bud-sub"></p></div>
-      <button class="x" type="button" id="bud-x" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-    </div>
-    <form class="bud-form" id="bud-form">
-      <label class="bud-lbl" for="bud-in">Total budget</label>
-      <div class="money"><span>$</span><input id="bud-in" inputmode="decimal" autocomplete="off" placeholder="25,000"></div>
-      <p class="bud-hint" id="bud-hint"></p>
-      <div class="bud-lbl">By location <span class="opt">optional</span></div>
-      <div class="bud-locs-in" id="bud-locs-in"></div>
-      <div class="bud-act">
-        <button type="button" class="btn btn-ghost2" id="bud-clear">Remove budget</button>
-        <button type="submit" class="btn btn-primary">Save budget</button>
-      </div>
-    </form>
-  </div>
 </div>
 
 <!-- Location picker -->
@@ -427,7 +464,8 @@
     { key: "Danbury",     nome: "Danbury",     local: "CT", link: "https://app.reportei.com/dashboard/1rLRsuaf4ltx7QR4B8FK4kuPSQ41HngV" }
   ];
   /* Monthly budget shown to everyone. Format "YYYY-MM": amount. (Can also be set with the MONTHLY_BUDGET variable on Vercel.) */
-  var BUDGETS = {};   // e.g. { "2026-10": 40000 }  or  { "2026-10": { total: 40000, locs: { Medford: 9000, Nissan: 9000 } } }
+  /* Fixed monthly ad budget (all locations). Change this number to update it for everyone. */
+  var MONTHLY_BUDGET = 50500;
   var POLL_MS = 120000; // how often the page checks for new data (the API itself refreshes every 5 min)
 
   /* Last saved data — used only when the live API isn't reachable (e.g. GitHub Pages preview). */
@@ -457,41 +495,130 @@
     function locByKey(k) { for (var i = 0; i < LOCATIONS.length; i++) if (LOCATIONS[i].key === k) return LOCATIONS[i]; return null; }
     function stateName(l) { return l.city ? l.city + ", " + l.local : (STATES[l.local] || l.local || ""); }
 
-    var S = { data: null, live: false, prevConv: null, mode: "live", metric: "leads", sort: { k: "spend", dir: -1 }, nextAt: 0 };
+    var S = { data: null, month: null, live: false, mode: "live", metric: "leads", sort: { k: "spend", dir: -1 }, nextAt: 0, range: { preset: "mtd" } };
 
     /* ================= Data ================= */
+    function todayISO() {
+      var p = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).reduce(function (o, x) { o[x.type] = x.value; return o; }, {});
+      return p.year + "-" + p.month + "-" + p.day;
+    }
+    function addDays(s, n) { return new Date(Date.parse(s + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10); }
+    function diffDays(a, b) { return Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 864e5); }
+    function monthStart(s) { return s.slice(0, 8) + "01"; }
+    function monthEnd(s) { var y = +s.slice(0, 4), m = +s.slice(5, 7); return s.slice(0, 8) + ("0" + new Date(Date.UTC(y, m, 0)).getUTCDate()).slice(-2); }
+    function prevMonthOf(s) { return addDays(monthStart(s), -1); }
+    var PRESETS = { today: "Today", yesterday: "Yesterday", last7: "Last 7 days", last30: "Last 30 days", mtd: "This month", lastmonth: "Last month", custom: "Custom" };
+    function presetRange(p) {
+      var t = todayISO(), r = { preset: p };
+      if (p === "today") { r.start = r.end = t; }
+      else if (p === "yesterday") { r.start = r.end = addDays(t, -1); }
+      else if (p === "last7") { r.start = addDays(t, -6); r.end = t; }
+      else if (p === "last30") { r.start = addDays(t, -29); r.end = t; }
+      else if (p === "lastmonth") { var pm = prevMonthOf(t); r.start = monthStart(pm); r.end = monthEnd(pm); var ppm = prevMonthOf(r.start); r.prevStart = monthStart(ppm); r.prevEnd = monthEnd(ppm); }
+      else { r.preset = "mtd"; }
+      return r;
+    }
+    function rangeQS() {
+      var r = S.range; if (r.preset === "mtd") return "";
+      return "?start=" + r.start + "&end=" + r.end + (r.prevStart ? "&prevStart=" + r.prevStart + "&prevEnd=" + r.prevEnd : "");
+    }
+    function getJSON(u) {
+      return fetch(u, { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (d) { if (!d || !d.locs) throw new Error("bad"); return d; });
+    }
+    /* Offline fallback: cut the saved month data down to the chosen days (no comparison available). */
+    function localView(M) {
+      var r = S.range; if (r.preset === "mtd") return M;
+      var idx = []; M.dates.forEach(function (d, i) { if (d >= r.start && d <= r.end) idx.push(i); });
+      var pick = function (a) { return idx.map(function (i) { return (a || [])[i] || 0; }); }, sum = function (a) { return a.reduce(function (x, y) { return x + y; }, 0); };
+      return { updated: M.updated, start: r.start, end: r.end, prevStart: null, prevEnd: null, partial: true, empty: !idx.length,
+        dates: idx.map(function (i) { return M.dates[i]; }),
+        locs: M.locs.map(function (l) { var d = pick(l.days), ld = pick(l.leadsDays); return { k: l.k, name: l.name, spend: sum(d), spendPrev: 0, conv: sum(ld), convPrev: 0, days: d, leadsDays: ld, hour: l.hour }; }) };
+    }
     function today(D) { return D.locs.map(function (l) { var a = l.leadsDays || []; return a.length ? a[a.length - 1] : 0; }); }
+    function todayMap() { var o = {}, td = today(S.month); S.month.locs.forEach(function (l, i) { o[l.k] = td[i]; }); return o; }
     function totals(D) {
       var t = { S: 0, C: 0, SP: 0, CP: 0, T: 0, Y: 0 };
       D.locs.forEach(function (l) {
-        t.S += l.spend; t.C += l.conv; t.SP += l.spendPrev; t.CP += l.convPrev;
+        t.S += l.spend; t.C += l.conv; t.SP += l.spendPrev || 0; t.CP += l.convPrev || 0;
         var a = l.leadsDays || []; t.T += a[a.length - 1] || 0; t.Y += a[a.length - 2] || 0;
       });
       return t;
     }
     function load(first) {
-      return fetch("api/data", { cache: "no-store" })
-        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-        .then(function (d) { if (!d || !d.locs) throw new Error("bad"); apply(d, true, first); })
-        .catch(function () { if (first) apply(SNAPSHOT, false, true); else setStatus(); })
-        .then(function () { S.nextAt = Date.now() + POLL_MS; });
+      var qs = rangeQS();
+      return getJSON("api/data").then(function (m) {
+        return (qs && S.range.end >= todayISO() || first && qs ? getJSON("api/data" + qs) : Promise.resolve(qs ? S.data : m)).then(function (v) { apply(m, v, true, first); });
+      }).catch(function () {
+        if (first || !S.month) apply(SNAPSHOT, localView(SNAPSHOT), false, true); else setStatus();
+      }).then(function () { S.nextAt = Date.now() + POLL_MS; });
     }
-    function apply(D, live, first) {
-      var old = S.data;
-      S.data = D; S.live = live;
-      renderHeader(); renderKpis(first ? null : old); renderBudget(); renderTable(); renderChart(); setStatus();
-      if (first || !old || old.start !== D.start || old.end !== D.end) { buildMap(); startMode(S.mode); }
-      else detectNew(old, D);
+    function apply(m, v, live, first) {
+      var oldM = S.month, oldV = S.data;
+      S.month = m; S.data = v; S.live = live;
+      renderHeader(); renderKpis(first ? null : oldV, first ? null : oldM); renderBudget(); renderTable(); renderChart(); setStatus();
+      if (first || !oldM || oldM.start !== m.start || oldM.end !== m.end) { buildMap(); startMode(S.mode); }
+      else if (S.mode === "live") detectNew(oldM, m);
+    }
+    /* Period filter changed → reload only the period numbers (map "Live" keeps using today). */
+    function loadView() {
+      var qs = rangeQS();
+      if (!qs) { applyView(S.month); return; }
+      if (!S.live) { applyView(localView(S.month)); return; }
+      document.body.classList.add("loading");
+      getJSON("api/data" + qs).then(applyView).catch(function () { applyView(localView(S.month)); })
+        .then(function () { document.body.classList.remove("loading"); });
+    }
+    function applyView(v) {
+      S.data = v;
+      renderHeader(); renderKpis(null, null); renderTable(); renderChart();
+      if (S.mode === "replay") startMode("replay");
+    }
+
+    /* ---- Period picker ---- */
+    var perBtn = $("per-btn"), perPop = $("per-pop");
+    function openPer() {
+      perPop.hidden = false; perBtn.setAttribute("aria-expanded", "true");
+      var r = S.range, t = todayISO();
+      $("per-from").max = $("per-to").max = t;
+      $("per-from").value = S.data ? S.data.start : t; $("per-to").value = S.data ? S.data.end : t;
+      $("per-err").textContent = "";
+      [].forEach.call(perPop.querySelectorAll("[data-p]"), function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-p") === r.preset ? "true" : "false"); });
+      var cur = perPop.querySelector('[aria-pressed="true"]') || perPop.querySelector("[data-p]"); setTimeout(function () { cur.focus(); }, 20);
+    }
+    function closePer(focusBtn) { if (perPop.hidden) return; perPop.hidden = true; perBtn.setAttribute("aria-expanded", "false"); if (focusBtn) perBtn.focus(); }
+    function setRange(r) { S.range = r; closePer(true); loadView(); }
+    perBtn.addEventListener("click", function () { if (perPop.hidden) openPer(); else closePer(false); });
+    $("per-presets").addEventListener("click", function (e) { var b = e.target.closest("[data-p]"); if (b) setRange(presetRange(b.getAttribute("data-p"))); });
+    $("per-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var a = $("per-from").value, b = $("per-to").value, t = todayISO(), err = $("per-err");
+      if (!a || !b) { err.textContent = "Pick both dates."; return; }
+      if (a > b) { var x = a; a = b; b = x; }
+      if (b > t) { err.textContent = "End date can't be in the future."; return; }
+      if (diffDays(a, b) > 91) { err.textContent = "Choose up to 92 days."; return; }
+      setRange({ preset: a === monthStart(t) && b === t ? "mtd" : "custom", start: a, end: b });
+    });
+    document.addEventListener("mousedown", function (e) { if (!perPop.hidden && !e.target.closest(".per-wrap")) closePer(false); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !perPop.hidden) { e.stopPropagation(); closePer(true); } }, true);
+    function rangeLabel() { return PRESETS[S.range.preset] || "Custom"; }
+    function fmtRange(a, b) {
+      if (!a) return "";
+      var y = b.slice(0, 4);
+      if (a === b) return fmtDay(a) + ", " + y;
+      return fmtDay(a) + " – " + fmtDay(b) + ", " + y;
     }
 
     /* ================= Header & status ================= */
     function renderHeader() {
       var D = S.data;
-      $("per").textContent = fmtDay(D.start) + " – " + fmtDay(D.end) + ", " + D.end.slice(0, 4);
-      $("foot-r").textContent = "Compared with " + fmtDay(D.prevStart) + " – " + fmtDay(D.prevEnd);
+      $("per-l").textContent = rangeLabel();
+      $("per").textContent = fmtRange(D.start, D.end);
+      $("tbl-sub").textContent = rangeLabel() + " · click a row to open its report";
+      $("foot-r").textContent = D.prevStart ? "Compared with " + fmtRange(D.prevStart, D.prevEnd) : (D.partial ? "Comparison needs the live connection" : "");
     }
     function setStatus() {
-      var D = S.data; if (!D) return;
+      var D = S.month; if (!D) return;
       $("status").classList.toggle("off", !S.live);
       $("st-main").innerHTML = S.live ? "<b>Live</b> · updated " + clock(new Date(D.updated))
         : "<b>Offline</b> · saved " + fmtDay(new Date(D.updated).toISOString().slice(0, 10)) + ", " + clock(new Date(D.updated));
@@ -503,25 +630,27 @@
     }, 1000);
 
     /* ================= KPIs ================= */
-    function renderKpis(old) {
-      var t = totals(S.data), ot = old ? totals(old) : null, cmp = "vs. same days last month";
+    function renderKpis(old, oldM) {
+      var D = S.data, t = totals(D), ot = old ? totals(old) : null, tm = totals(S.month), otm = oldM ? totals(oldM) : null;
+      var cmp = D.empty ? "No saved data for this period" : D.prevStart ? (S.range.preset === "mtd" ? "vs. same days last month" : "vs. " + fmtRange(D.prevStart, D.prevEnd)) : (D.partial ? "Offline · no comparison" : "");
       $("kpis").innerHTML =
         kpi("Amount spent", usd(t.S), delta(t.S, t.SP, true) + cmp, "k-s") +
         kpi("Leads", int(t.C), delta(t.C, t.CP, true) + cmp, "k-c") +
         kpi("Avg. cost per lead", t.C ? usd(t.S / t.C) : "—", t.C && t.CP ? delta(t.S / t.C, t.SP / t.CP, false) + cmp : "", "k-p") +
-        '<div class="kpi hl"><div class="l">Leads today <span class="live-tag">' + (S.live ? "LIVE" : "SAVED") + '</span></div><div class="v num" id="k-t">' + int(t.T) +
-        '</div><div class="c">Yesterday: ' + int(t.Y) + " leads</div></div>";
-      if (ot) { if (ot.C !== t.C) bump("k-c"); if (ot.T !== t.T) bump("k-t"); if (ot.S !== t.S) bump("k-s"); }
+        '<div class="kpi hl"><div class="l">Leads today <span class="live-tag">' + (S.live ? "LIVE" : "SAVED") + '</span></div><div class="v num" id="k-t">' + int(tm.T) +
+        '</div><div class="c">Yesterday: ' + int(tm.Y) + " leads</div></div>";
+      if (ot) { if (ot.C !== t.C) bump("k-c"); if (ot.S !== t.S) bump("k-s"); }
+      if (otm && otm.T !== tm.T) bump("k-t");
     }
     function kpi(l, v, c, id) { return '<div class="kpi"><div class="l">' + l + '</div><div class="v num" id="' + id + '">' + v + '</div><div class="c">' + c + "</div></div>"; }
     function bump(id) { var e = $(id); if (!e) return; e.classList.remove("bump"); void e.offsetWidth; e.classList.add("bump"); }
 
     /* ================= Table ================= */
     function rowsData() {
-      var D = S.data, td = today(D);
+      var D = S.data, tdm = todayMap();
       return D.locs.map(function (l, i) {
         var L = locByKey(l.k) || { nome: l.name, local: "" };
-        return { k: l.k, name: L.nome || l.name, sub: stateName(L), spend: l.spend, conv: l.conv, cpl: l.conv ? l.spend / l.conv : Infinity, today: td[i] };
+        return { k: l.k, name: L.nome || l.name, sub: stateName(L), spend: l.spend, conv: l.conv, cpl: l.conv ? l.spend / l.conv : Infinity, today: tdm[l.k] || 0 };
       });
     }
     function renderTable() {
@@ -536,7 +665,7 @@
           '<td class="num"><span class="today-n' + (r.today ? "" : " zero") + '">' + (r.today ? "+" + r.today : "0") + "</span></td>" +
           '<td><svg class="go" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></td></tr>';
       }).join("");
-      $("tfoot").innerHTML = "<tr><td>All locations</td><td class=\"num\">" + usd(t.S) + '</td><td class="num">' + int(t.C) + '</td><td class="num">' + (t.C ? usd(t.S / t.C) : "—") + '</td><td class="num">+' + int(t.T) + "</td><td></td></tr>";
+      $("tfoot").innerHTML = "<tr><td>All locations</td><td class=\"num\">" + usd(t.S) + '</td><td class="num">' + int(t.C) + '</td><td class="num">' + (t.C ? usd(t.S / t.C) : "—") + '</td><td class="num">+' + int(totals(S.month).T) + "</td><td></td></tr>";
       [].forEach.call(document.querySelectorAll("th button"), function (b) {
         if (b.getAttribute("data-sort") === k) b.setAttribute("aria-sort", dir < 0 ? "descending" : "ascending"); else b.removeAttribute("aria-sort");
       });
@@ -552,7 +681,8 @@
 
     /* ================= Chart ================= */
     function renderChart() {
-      var D = S.data, m = S.metric, n = D.dates.length;
+      var D = S.data, m = S.metric, n = D.dates.length, tISO = todayISO(), endsToday = D.dates[n - 1] === tISO;
+      if (!n) { var o0 = $("chart").querySelector("svg"); if (o0) o0.remove(); $("ch-sum").innerHTML = "<div>No data for this period</div>"; return; }
       var vals = D.dates.map(function (d, i) { var t = 0; D.locs.forEach(function (l) { t += (m === "leads" ? (l.leadsDays || [])[i] : l.days[i]) || 0; }); return t; });
       $("ch-sub").textContent = (m === "leads" ? "Leads" : "Amount spent") + " per day · all locations";
       var box = $("chart"), old = box.querySelector("svg"); if (old) old.remove();
@@ -564,20 +694,20 @@
       for (var g = 0; g <= max + 1e-9; g += stepV) s += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="rgba(24,24,27,.07)"/><text x="' + (pl - 8) + '" y="' + (y(g) + 4) + '" text-anchor="end" font-size="11" fill="#a1a1aa">' + axis(g, m) + "</text>";
       var every = Math.ceil(n / 8);
       vals.forEach(function (v, i) {
-        var cx = pl + bw * i + bw / 2, h = Math.max(v > 0 ? 2 : 0, (H - pt - pb) - (y(v) - pt)), isT = i === n - 1;
+        var cx = pl + bw * i + bw / 2, h = Math.max(v > 0 ? 2 : 0, (H - pt - pb) - (y(v) - pt)), isT = D.dates[i] === tISO;
         s += '<path d="' + roundTop(cx - barW / 2, H - pb - h, barW, h, 4) + '" fill="' + (isT ? "#eab308" : "#d4d4d8") + '"/>';
         if ((i % every === 0 && n - 1 - i > every) || isT) s += '<text x="' + cx + '" y="' + (H - 9) + '" text-anchor="middle" font-size="11" fill="' + (isT ? "#a16207" : "#a1a1aa") + '" font-weight="' + (isT ? 700 : 400) + '">' + (isT ? "Today" : fmtDay(D.dates[i])) + "</text>";
       });
       s += '<rect class="hz" x="' + pl + '" y="0" width="' + (W - pl - pr) + '" height="' + H + '" fill="transparent"/></svg>';
       box.insertAdjacentHTML("beforeend", s);
-      var full = vals.slice(0, n - 1), bi = full.indexOf(Math.max.apply(null, full.concat([0]))), avg = full.length ? full.reduce(function (a, b) { return a + b; }, 0) / full.length : 0;
+      var full = endsToday && n > 1 ? vals.slice(0, n - 1) : vals.slice(), bi = full.indexOf(Math.max.apply(null, full.concat([0]))), avg = full.length ? full.reduce(function (a, b) { return a + b; }, 0) / full.length : 0;
       var fmtV = function (v) { return m === "leads" ? int(Math.round(v)) : usd(v, 0); };
-      $("ch-sum").innerHTML = "<div>Best day<b>" + (bi >= 0 && full.length ? fmtDay(D.dates[bi]) + " · " + fmtV(full[bi]) : "—") + "</b></div><div>Daily average<b>" + fmtV(avg) + "</b></div><div>Today so far<b>" + fmtV(vals[n - 1]) + "</b></div>";
+      $("ch-sum").innerHTML = "<div>Best day<b>" + (bi >= 0 && full.length ? fmtDay(D.dates[bi]) + " · " + fmtV(full[bi]) : "—") + "</b></div><div>Daily average<b>" + fmtV(avg) + "</b></div><div>" + (endsToday ? "Today so far" : "Total in period") + "<b>" + (endsToday ? fmtV(vals[n - 1]) : fmtV(vals.reduce(function (a, b) { return a + b; }, 0))) + "</b></div>";
       var sv = box.querySelector("svg"), tip = $("tip");
       sv.querySelector(".hz").addEventListener("mousemove", function (e) {
         var r = sv.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W, i = Math.max(0, Math.min(n - 1, Math.floor((px - pl) / bw)));
         var cx = pl + bw * i + bw / 2;
-        tip.innerHTML = (i === n - 1 ? "Today (so far)" : fmtDay(D.dates[i])) + "<b>" + (m === "leads" ? int(vals[i]) + " leads" : usd(vals[i])) + "</b>";
+        tip.innerHTML = (D.dates[i] === tISO ? "Today (so far)" : fmtDay(D.dates[i])) + "<b>" + (m === "leads" ? int(vals[i]) + " leads" : usd(vals[i])) + "</b>";
         tip.style.left = (cx / W * r.width + 20) + "px"; tip.style.top = (y(vals[i]) / H * r.height + 8) + "px"; tip.style.opacity = 1;
       });
       sv.querySelector(".hz").addEventListener("mouseleave", function () { tip.style.opacity = 0; });
@@ -673,7 +803,7 @@
 
     /* Live · today: replays today's real leads quickly, then waits for new ones from the API. */
     function startLive() {
-      var D = S.data, gen = M.gen, td = today(D), target = {}, ND = D.dates.length, ev = [], hr = nyHour();
+      var D = S.month, gen = M.gen, td = today(D), target = {}, ND = D.dates.length, ev = [], hr = nyHour();
       $("live-sub").textContent = S.live ? "Today's real leads per location — new ones appear as they come in" : "Today's leads from the last saved data";
       $("big-l").textContent = "Leads today"; $("bars-l").textContent = "Today by location";
       D.locs.forEach(function (l, i) {
@@ -721,13 +851,14 @@
       });
       if (!any && S.mode === "live") { var f = $("feed"); if (f.querySelector(".empty")) feedEmpty("No new leads in the last check (" + now + "). Watching…"); }
     }
-    function targetToday() { var o = {}, td = today(S.data); S.data.locs.forEach(function (l, i) { o[l.k] = td[i]; }); return o; }
+    function targetToday() { return todayMap(); }
 
     /* Month replay: real leads per day, replayed from day 1 to today. */
     function startReplay() {
       var D = S.data, gen = M.gen, ND = D.dates.length, ev = [], target = {};
-      $("live-sub").textContent = "This month's real leads per day, replayed from " + fmtDay(D.start);
-      $("big-l").textContent = "Leads this month"; $("bars-l").textContent = "Month by location";
+      if (!ND) { $("live-sub").textContent = "No data saved for this period"; $("prog").style.display = "none"; feedEmpty("Pick another period or wait for the live connection."); setBig(0); return; }
+      $("live-sub").textContent = "Real leads per day · " + rangeLabel().toLowerCase() + " (" + fmtRange(D.start, D.end) + ")";
+      $("big-l").textContent = "Leads in period"; $("bars-l").textContent = "Period by location";
       $("prog").style.display = ""; $("feed").innerHTML = "";
       D.locs.forEach(function (l) {
         target[l.k] = l.conv; M.cnt[l.k] = 0;
@@ -761,7 +892,7 @@
     }
 
     /* ================= Budget pacing ================= */
-    function monthKey() { return S.data ? S.data.start.slice(0, 7) : ""; }
+    function monthKey() { return S.month ? S.month.start.slice(0, 7) : ""; }
     function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
     function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
     function sumObj(o) { var s = 0; for (var k in o) s += o[k] > 0 ? o[k] : 0; return s; }
@@ -773,15 +904,9 @@
       var total = v.total > 0 ? +v.total : sumObj(locs);
       return total > 0 || Object.keys(locs).length ? { total: total, locs: locs } : null;
     }
-    function budgetInfo() {
-      var mk = monthKey(), raw = lsGet("pa_budget_" + mk), b = null;
-      if (raw) { try { b = normBudget(JSON.parse(raw)); } catch (e) { b = normBudget(parseFloat(raw)); } if (b) { b.src = "local"; return b; } }
-      b = normBudget(BUDGETS[mk]); if (b) { b.src = "code"; return b; }
-      b = normBudget(S.data && S.data.budget); if (b) { b.src = "server"; return b; }
-      return null;
-    }
+    function budgetInfo() { return MONTHLY_BUDGET > 0 ? { total: MONTHLY_BUDGET, locs: {}, src: "fixed" } : null; }
     function monthMeta() {
-      var D = S.data, y = +D.start.slice(0, 4), mo = +D.start.slice(5, 7), dim = new Date(Date.UTC(y, mo, 0)).getUTCDate(), dayN = +D.end.slice(8, 10);
+      var D = S.month, y = +D.start.slice(0, 4), mo = +D.start.slice(5, 7), dim = new Date(Date.UTC(y, mo, 0)).getUTCDate(), dayN = +D.end.slice(8, 10);
       var elapsed = Math.max(0.5, dayN - 1 + nyDayFraction());
       return { dim: dim, dayN: dayN, daysLeft: Math.max(0, dim - dayN + 1), elapsed: elapsed, expectPct: Math.min(100, elapsed / dim * 100),
         name: new Date(Date.UTC(y, mo - 1, 15)).toLocaleString("en-US", { month: "long", timeZone: "UTC" }) };
@@ -794,26 +919,26 @@
       return { c: "slow", t: "Under pace", n: "Projected " + usd(proj, 0) + " · " + usd(-diff, 0) + " left unspent", proj: proj };
     }
     function renderBudget() {
-      var D = S.data, el = $("budget"), b = budgetInfo(), t = totals(D), m = monthMeta();
+      var D = S.month, el = $("budget"), b = budgetInfo(), t = totals(D), m = monthMeta();
       if (!b) {
         el.className = "card budget empty";
         el.innerHTML = '<div class="bud-empty"><span class="bud-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>' +
           '<div><h2 id="bg-h">Track your ' + m.name + ' budget</h2><p>Add the monthly ad budget — total or per location — to see how much is left and the ideal daily spend.</p></div>' +
-          '<button type="button" class="btn btn-primary" data-bud="open">Add budget</button></div>';
+          '</div>';
         return;
       }
       var spent = t.S, pct = b.total ? spent / b.total * 100 : 0, left = b.total - spent, st = paceStatus(spent, b.total, m);
       var perDay = m.daysLeft > 0 ? Math.max(0, left) / m.daysLeft : 0;
       var html =
         '<div class="bud-top"><div><h2 id="bg-h">' + m.name + ' budget</h2><p>All locations · ' + m.daysLeft + (m.daysLeft === 1 ? " day" : " days") + ' left in the month</p></div>' +
-        '<div class="bud-r"><span class="pill-st ' + st.c + '">' + st.t + '</span><button type="button" class="btn btn-ghost2" data-bud="open"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Edit</button></div></div>' +
+        '<div class="bud-r"><span class="pill-st ' + st.c + '">' + st.t + '</span></div></div>' +
         '<div class="bud-nums">' +
           '<div><span>Budget</span><b class="num">' + usd(b.total, 0) + '</b></div>' +
           '<div><span>Spent</span><b class="num">' + usd(spent, 0) + '</b><em>' + pct.toFixed(1) + '% used</em></div>' +
           '<div class="hl"><span>' + (left >= 0 ? "Remaining" : "Over budget") + '</span><b class="num">' + usd(Math.abs(left), 0) + '</b><em>' + (left >= 0 ? (100 - pct).toFixed(1) + "% left" : "") + '</em></div>' +
           '<div><span>Ideal daily spend</span><b class="num">' + (m.daysLeft ? usd(perDay, 0) : "—") + '</b><em>to finish on budget</em></div>' +
         '</div>' + bar(pct, m.expectPct, st.c, true) +
-        '<p class="bud-note">' + st.n + (b.src === "local" ? ' · <span title="Saved in this browser only">saved on this device</span>' : "") + '</p>';
+        '<p class="bud-note">' + st.n + (b.src === "local" ? ' · <span title="Saved in this browser only">saved on this device only</span>' : "") + '</p>';
       var keys = Object.keys(b.locs);
       if (keys.length) {
         html += '<div class="bud-locs"><div class="bud-lh"><span>Location</span><span>Spent / budget</span><span>Remaining</span><span>Per day</span><span></span></div>' +
@@ -834,54 +959,6 @@
         '<span class="mark" style="left:' + expect + '%"><i></i>' + (big ? "<em>Today's target " + expect.toFixed(0) + "%</em>" : "") + "</span></div>";
     }
     function nyDayFraction() { var h = nyHour(); return Math.min(1, Math.max(0.05, (h + 0.5) / 24)); }
-
-    /* ---- Budget editor ---- */
-    var BO = { lastFocus: null };
-    function parseMoney(v) { var n = parseFloat(String(v).replace(/[^0-9.]/g, "")); return n > 0 ? n : 0; }
-    function fmtIn(n) { return n > 0 ? Math.round(n).toLocaleString("en-US") : ""; }
-    function openBudget() {
-      var b = budgetInfo(), mk = monthKey();
-      BO.lastFocus = document.activeElement;
-      $("bud-sub").textContent = MON[+mk.slice(5, 7) - 1] + " " + mk.slice(0, 4) + " · fill the total, or per location (the total adds them up).";
-      $("bud-in").value = b && !Object.keys(b.locs).length ? fmtIn(b.total) : (b && b.total !== sumObj(b.locs) ? fmtIn(b.total) : "");
-      $("bud-locs-in").innerHTML = S.data.locs.map(function (l) {
-        var L = locByKey(l.k) || { nome: l.name };
-        return '<label class="bud-li"><span class="av">' + initials(L.nome || l.name) + '</span><span class="bud-ln"><b>' + esc(L.nome || l.name) + '</b><small>Spent ' + usd(l.spend, 0) + '</small></span>' +
-          '<span class="money sm"><span>$</span><input data-k="' + l.k + '" inputmode="decimal" autocomplete="off" placeholder="—" value="' + (b && b.locs[l.k] ? fmtIn(b.locs[l.k]) : "") + '"></span></label>';
-      }).join("");
-      $("bud-clear").style.visibility = b && b.src === "local" ? "visible" : "hidden";
-      budHint();
-      $("bud-ov").classList.add("open"); $("bud-ov").setAttribute("aria-hidden", "false");
-      setTimeout(function () { $("bud-in").focus(); $("bud-in").select(); }, 30);
-    }
-    function readForm() {
-      var locs = {}; [].forEach.call(document.querySelectorAll("#bud-locs-in input"), function (i) { var n = parseMoney(i.value); if (n) locs[i.getAttribute("data-k")] = n; });
-      var total = parseMoney($("bud-in").value), sl = sumObj(locs);
-      return { total: total || sl, locs: locs, typedTotal: total, sumLocs: sl };
-    }
-    function budHint() {
-      var f = readForm(), spent = totals(S.data).S, h = $("bud-hint");
-      $("bud-in").placeholder = f.sumLocs ? fmtIn(f.sumLocs) : "25,000";
-      if (!f.total) { h.className = "bud-hint"; h.textContent = "Spent so far this month: " + usd(spent, 0) + "."; return; }
-      var warn = f.typedTotal && f.sumLocs && Math.abs(f.typedTotal - f.sumLocs) > 0.5;
-      h.className = "bud-hint" + (warn ? " warn" : "");
-      h.textContent = warn ? "Locations add up to " + usd(f.sumLocs, 0) + " — different from the total " + usd(f.typedTotal, 0) + "."
-        : "Total " + usd(f.total, 0) + " · remaining " + usd(f.total - spent, 0) + " (spent " + usd(spent, 0) + ").";
-    }
-    function closeBudget() { $("bud-ov").classList.remove("open"); $("bud-ov").setAttribute("aria-hidden", "true"); if (BO.lastFocus && BO.lastFocus.focus) BO.lastFocus.focus(); }
-    $("budget").addEventListener("click", function (e) { if (e.target.closest("[data-bud=open]")) openBudget(); });
-    $("bud-x").addEventListener("click", closeBudget);
-    $("bud-ov").addEventListener("mousedown", function (e) { if (e.target === $("bud-ov")) closeBudget(); });
-    $("bud-form").addEventListener("input", budHint);
-    $("bud-form").addEventListener("focusout", function (e) { if (e.target.tagName === "INPUT") { var n = parseMoney(e.target.value); e.target.value = n ? fmtIn(n) : ""; budHint(); } });
-    $("bud-form").addEventListener("submit", function (e) {
-      e.preventDefault();
-      var f = readForm();
-      if (!f.total) { $("bud-in").focus(); $("bud-hint").className = "bud-hint warn"; $("bud-hint").textContent = "Enter a total or at least one location budget."; return; }
-      lsSet("pa_budget_" + monthKey(), JSON.stringify({ total: f.total, locs: f.locs })); closeBudget(); renderBudget();
-    });
-    $("bud-clear").addEventListener("click", function () { lsSet("pa_budget_" + monthKey(), null); closeBudget(); renderBudget(); });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && $("bud-ov").classList.contains("open")) { e.stopPropagation(); closeBudget(); } }, true);
 
     /* ================= Location picker ================= */
     var PK = { open: false, filter: "ALL", sel: 0, items: [], lastFocus: null };
@@ -944,7 +1021,7 @@
         }
         return;
       }
-      if (e.key === "/" && !$("viewer").classList.contains("open") && !$("bud-ov").classList.contains("open") && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); openPicker(); }
+      if (e.key === "/" && !$("viewer").classList.contains("open") && !/input|textarea|select/i.test(document.activeElement.tagName)) { e.preventDefault(); openPicker(); }
       if (e.key === "Escape" && $("viewer").classList.contains("open")) closeReport();
     });
 
