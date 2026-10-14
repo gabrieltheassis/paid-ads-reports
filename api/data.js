@@ -1,5 +1,6 @@
 // Vercel serverless function: GET /api/data
 // Reads month-to-date Meta Ads numbers for every location from the Reportei API.
+// Returns spend, leads (messaging conversations), leads per day, spend per day and hourly activity.
 // The API key lives ONLY in the Vercel environment variable REPORTEI_API_KEY (never in the page).
 
 const API = "https://app.reportei.com/api/v1";
@@ -19,6 +20,8 @@ const WIDGETS = [
   { id: "spend", reference_key: "fb_ads:spend", component: "number_v1", metrics: ["spend"] },
   { id: "leads", reference_key: "fb_ads:actions_onsite_conversion.messaging_conversation_started_7d", component: "number_v1",
     metrics: ["actions:onsite_conversion.messaging_conversation_started_7d"] },
+  { id: "leads_by_date", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "line",
+    metrics: ["actions:onsite_conversion.messaging_conversation_started_7d"], dimensions: [{ field: "date_start" }] },
   { id: "by_date", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "line",
     metrics: ["spend"], dimensions: [{ field: "date_start" }] },
   { id: "by_hour", reference_key: "fb_ads:impressions_reach_by_hour", component: "chart_v1", chart_type: "bar",
@@ -59,6 +62,10 @@ async function fetchLocation(loc, p, key) {
   const dayMap = {};
   (byDate.labels || []).forEach((lab, i) => { dayMap[lab] = num(((byDate.values || [])[0] || {}).data?.[i]); });
 
+  const leadsByDate = data.leads_by_date || {};
+  const leadMap = {};
+  (leadsByDate.labels || []).forEach((lab, i) => { leadMap[lab] = num(((leadsByDate.values || [])[0] || {}).data?.[i]); });
+
   const byHour = data.by_hour || {};
   const impressions = ((byHour.values || []).find((s) => s.name === "impressions") || {}).data || [];
   const hour = (byHour.labels || []).length === 24 ? impressions.map(num) : new Array(24).fill(1);
@@ -71,6 +78,7 @@ async function fetchLocation(loc, p, key) {
     conv: num(data.leads?.values),
     convPrev: num(data.leads?.comparison?.values),
     days: p.dates.map((d) => dayMap[d] || 0),
+    leadsDays: p.dates.map((d) => leadMap[d] || 0),
     hour
   };
 }
@@ -84,12 +92,14 @@ module.exports = async (req, res) => {
   try {
     const p = periods();
     const locs = await Promise.all(LOCATIONS.map((l) => fetchLocation(l, p, key)));
-    // Cache on Vercel's edge for 30 min; serve the old copy while refreshing.
-    res.setHeader("Cache-Control", "s-maxage=1800, stale-while-revalidate=3600");
+    // Cache on Vercel's edge for 5 min (keeps the page "live" without hammering the Reportei API).
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
     res.status(200).json({
       updated: new Date().toISOString(),
       start: p.start, end: p.end, prevStart: p.prevStart, prevEnd: p.prevEnd,
-      dates: p.dates, locs
+      dates: p.dates, locs,
+      // Optional: monthly budget for everyone, set as MONTHLY_BUDGET on Vercel (e.g. 25000)
+      budget: Number(process.env.MONTHLY_BUDGET) || null
     });
   } catch (e) {
     res.setHeader("Cache-Control", "no-store");
