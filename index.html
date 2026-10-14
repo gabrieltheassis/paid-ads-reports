@@ -90,6 +90,62 @@
   @media (max-width:900px){.pah-grid{grid-template-columns:repeat(2,1fr)}.pah-steps{grid-template-columns:1fr}}
   @media (max-width:600px){.pah{padding:16px 16px 32px}.pah-hero{padding:22px 20px}.pah-hero h1{font-size:23px}
     .pah-grid{grid-template-columns:1fr}.pah-search{flex:1}.pah-search input{width:100%}}
+
+  /* ===== Overview: month-to-date dashboard + leads map ===== */
+  .pao{margin-top:36px}
+  .pao-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+  .pao-head h2{font-size:20px;font-weight:700;margin:0}
+  .pao-sub{color:var(--muted);font-size:14px;margin:4px 0 0}
+  .pao-pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--ink2);background:#fff;border:1px solid var(--line);padding:7px 12px;border-radius:999px}
+  .pao-pill i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+  .pao-pill.is-old i{background:var(--faint)}
+  .pao-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+  .pao-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;box-shadow:0 1px 2px rgba(28,25,23,.04)}
+  .pao-kpi .l{font-size:13px;font-weight:600;color:var(--muted)}
+  .pao-kpi .v{font-size:32px;font-weight:800;letter-spacing:-.02em;margin:6px 0 4px;font-variant-numeric:tabular-nums}
+  .pao-kpi .c{font-size:13px;color:var(--muted)}
+  .pao-d{font-weight:700}.pao-d.good{color:#15803d}.pao-d.bad{color:#b91c1c}
+  .pao-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin-bottom:16px;box-shadow:0 1px 2px rgba(28,25,23,.04)}
+  .pao-card h3{font-size:17px;margin:0 0 2px}
+  .pao-tw{overflow-x:auto}
+  .pao table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  .pao th{font-size:12px;font-weight:700;color:var(--muted);text-align:right;padding:10px 8px;border-bottom:1px solid var(--line);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+  .pao th:first-child,.pao td:first-child{text-align:left}
+  .pao td{padding:12px 8px;border-bottom:1px solid var(--soft);text-align:right;font-size:14px;white-space:nowrap}
+  .pao tfoot td{font-weight:800;border-top:1px solid var(--line);border-bottom:0}
+  .pao-share{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+  .pao-share i{display:block;height:6px;border-radius:0 4px 4px 0;background:var(--yellow);min-width:2px}
+  .pao-chart{position:relative;margin-top:8px}
+  .pao-chart svg{display:block;width:100%;height:auto;overflow:visible}
+  .pao-tip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;font-size:13px;padding:8px 10px;border-radius:8px;white-space:nowrap;transform:translate(-50%,-110%);opacity:0;transition:opacity .1s}
+  .pao-tip b{display:block;font-size:15px}
+  .pao-panel{display:grid;grid-template-columns:1fr 290px;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,#1c1917,#292524);margin-bottom:10px}
+  .pao-map{min-width:0}
+  .pao-map svg{display:block;width:100%;height:auto}
+  .pao-st{fill:#2f2a27;stroke:#57534e;stroke-width:1}.pao-st.on{fill:#3a3430}
+  .pao-stl{fill:#78716c;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+  .pao-ll{fill:#fff;font-size:13px;font-weight:700;paint-order:stroke;stroke:#1c1917;stroke-width:4px}
+  .pao-ring{fill:none;stroke:var(--yellow);stroke-width:2;transform-box:fill-box;transform-origin:center;animation:paoRing 2.4s ease-out infinite}
+  @keyframes paoRing{0%{transform:scale(.4);opacity:.9}100%{transform:scale(3);opacity:0}}
+  .pao-hit{animation:paoHit .5s ease-out}@keyframes paoHit{0%{r:7}40%{r:12}100%{r:7}}
+  .pao-side{background:rgba(0,0,0,.25);border-left:1px solid rgba(255,255,255,.06);padding:18px;color:#e7e5e4;display:flex;flex-direction:column;gap:14px}
+  .pao-big{font-size:38px;font-weight:800;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+  .pao-big small{display:block;font-size:12px;font-weight:600;color:#a8a29e;letter-spacing:.06em;text-transform:uppercase;margin-top:6px}
+  .pao-prog{font-size:13px;color:#d6d3d1}
+  .pao-bars{display:flex;flex-direction:column;gap:8px}
+  .pao-bar{font-size:13px}.pao-bar>div:first-child{display:flex;justify-content:space-between;margin-bottom:4px}.pao-bar b{color:#fff;font-variant-numeric:tabular-nums}
+  .pao-track{height:6px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:6px}
+  .pao-bar .pao-track{margin-top:0}
+  .pao-track span{display:block;height:100%;background:var(--yellow);border-radius:99px;transition:width .3s}
+  .pao-feed{list-style:none;margin:0;padding:0;font-size:13px;display:flex;flex-direction:column;gap:7px;min-height:120px}
+  .pao-feed li{display:flex;gap:8px;align-items:center;animation:paoIn .3s ease-out}
+  .pao-feed li i{flex:0 0 8px;height:8px;border-radius:50%;background:#22c55e}
+  .pao-feed li em{font-style:normal;color:#a8a29e;margin-left:auto;white-space:nowrap}
+  @keyframes paoIn{from{opacity:0;transform:translateY(-6px)}}
+  .pao-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a8a29e;margin-bottom:8px}
+  .pao-note{font-size:13px;color:var(--muted);margin:0}
+  @media (max-width:900px){.pao-kpis{grid-template-columns:1fr}.pao-panel{grid-template-columns:1fr}.pao-side{border-left:0;border-top:1px solid rgba(255,255,255,.06)}}
+  @media (prefers-reduced-motion:reduce){.pao-ring{animation:none}}
 </style>
 
 <div class="pah">
@@ -118,6 +174,28 @@
     </div>
 
     <div class="pah-grid" id="pah-grid"></div>
+
+    <section class="pao" id="pao" aria-label="This month at a glance">
+      <div class="pao-head">
+        <div><h2>This month at a glance</h2><p class="pao-sub">All locations combined · Meta Ads · <span id="pao-per">loading…</span></p></div>
+        <span class="pao-pill" id="pao-pill"><i></i><span id="pao-upd">Loading data…</span></span>
+      </div>
+      <div class="pao-kpis" id="pao-kpis"></div>
+      <div class="pao-card"><h3>Results by location</h3><p class="pao-sub">Leads = messaging conversations started · CPL = amount spent ÷ leads</p>
+        <div class="pao-tw"><table><thead><tr><th>Location</th><th>Spent</th><th>Leads</th><th>CPL</th><th>Share of spend</th></tr></thead><tbody id="pao-rows"></tbody><tfoot id="pao-foot"></tfoot></table></div></div>
+      <div class="pao-card"><h3>Amount spent per day</h3><p class="pao-sub">All locations combined</p><div class="pao-chart" id="pao-ch"><div class="pao-tip" id="pao-tip"></div></div></div>
+      <div class="pao-head" style="margin-top:24px"><div><h2>Leads map</h2><p class="pao-sub">This month's real lead count per location, replayed day by day.</p></div></div>
+      <div class="pao-panel">
+        <div class="pao-map"><svg id="pao-svg" viewBox="0 0 900 560" role="img" aria-label="Map of leads by location"></svg></div>
+        <aside class="pao-side">
+          <div class="pao-big" id="pao-total">0<small>Leads · this month</small></div>
+          <div class="pao-prog"><span id="pao-day">—</span><div class="pao-track"><span id="pao-pbar" style="width:0"></span></div></div>
+          <div><div class="pao-lbl">By location</div><div class="pao-bars" id="pao-bars"></div></div>
+          <div><div class="pao-lbl">Activity</div><ul class="pao-feed" id="pao-feed"></ul></div>
+        </aside>
+      </div>
+      <p class="pao-note">Totals per location are real (Reportei). The daily rhythm follows each location's spend per day and peak hours; arc starting points are illustrative.</p>
+    </section>
 
     <div class="pah-help">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
@@ -215,6 +293,169 @@
     };
     window.addEventListener("hashchange", route);
     route();
+  })();
+</script>
+<script>
+  /* ===== Overview: month-to-date dashboard + leads map =====
+     Live data comes from /api/data (Vercel function that reads the Reportei API).
+     If that is not available (e.g. GitHub Pages), the last saved snapshot below is shown. */
+  var PAO_SNAPSHOT = {"updated":"2026-10-14T14:27:56.052Z","start":"2026-10-01","end":"2026-10-14","prevStart":"2026-09-01","prevEnd":"2026-09-14","dates":["2026-10-01","2026-10-02","2026-10-03","2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-10","2026-10-11","2026-10-12","2026-10-13","2026-10-14"],"locs":[{"k":"Marlborough","name":"Marlborough","spend":2870.73,"spendPrev":355.17,"conv":187,"convPrev":22,"days":[264.78,201.68,0,181.84,281.79,284.36,5.68,367.17,314.05,290.97,75.31,326.04,277.06,0],"hour":[719,326,249,233,418,1440,3028,4547,5778,7049,7544,9112,11133,8354,8068,8362,8435,7952,6538,5030,4417,4018,2544,1268]},{"k":"Medford","name":"Medford","spend":3713.4,"spendPrev":7922.44,"conv":351,"convPrev":527,"days":[264.76,247.8,248.85,261.37,304.07,317.8,261.78,274.35,275.96,260.58,326.44,276.28,335.47,57.89],"hour":[1507,755,515,476,773,1962,4039,6525,8561,9953,10600,12251,13561,11310,11277,10978,10981,10435,8823,7539,7154,5926,4282,2544]},{"k":"Mitsubishi","name":"Mitsubishi","spend":3566.56,"spendPrev":3631.97,"conv":434,"convPrev":287,"days":[242.63,230.37,227.2,259.65,297.48,300.8,219.27,245.64,265.17,248.47,330.76,286.99,343.34,68.79],"hour":[1292,729,424,450,695,1649,3467,5737,7462,8503,8992,10323,11704,10193,9972,10102,10189,9879,9145,8106,6895,5540,3487,1968]},{"k":"DougCar","name":"Doug Car","spend":210.66,"spendPrev":225.83,"conv":16,"convPrev":19,"days":[12.36,14.35,12.06,17.72,13.61,19.44,16.88,20.65,14.4,9.29,18.88,17.17,19.31,4.54],"hour":[143,79,61,47,68,164,314,452,537,592,687,782,861,658,742,739,733,640,630,608,550,463,345,164]},{"k":"Nissan","name":"Nissan","spend":3674.28,"spendPrev":3096.18,"conv":396,"convPrev":398,"days":[149.76,68.25,510.94,322,313.02,350.75,158.71,338.12,308.95,307.38,250.7,387.15,182.88,25.67],"hour":[1388,721,497,551,843,1660,3652,7128,9720,12012,12902,13548,14254,11174,9630,9103,8673,8375,7047,5888,5479,4665,3072,1800]},{"k":"Danbury","name":"Danbury","spend":3165.07,"spendPrev":331.43,"conv":222,"convPrev":29,"days":[277.86,254.27,229.56,164.39,185.83,255.3,172.76,181.17,192.09,210.98,281.06,337.54,369.5,52.76],"hour":[1072,543,362,364,765,1925,3729,5405,6311,7267,8936,10667,12291,10621,9479,10954,10759,10362,9127,7814,7192,5661,4015,2251]}]};
+  var PAO_STATES = [{"n":"Massachusetts","d":"M765,450L774,455L794,454L806,450L814,435L825,458L824,464L818,468L795,467L768,454ZM661,439L673,439L686,420L704,407L711,410L716,425L726,431L733,422L732,440L705,440L684,442L671,452ZM202,85L354,90L489,95L574,98L581,88L595,88L594,74L604,66L617,70L623,56L648,49L658,56L663,53L665,69L671,99L688,109L696,100L705,107L694,127L679,129L653,136L661,147L649,158L644,156L641,169L638,160L631,172L638,188L629,186L626,192L631,198L628,204L638,207L642,199L651,197L657,208L673,214L682,223L683,233L697,253L696,264L692,273L684,274L686,279L700,290L708,288L713,294L719,312L715,322L724,333L740,341L763,343L769,348L782,339L795,337L813,330L817,324L816,307L812,294L803,301L803,279L800,267L790,260L784,262L780,270L773,257L782,255L796,259L811,271L824,298L830,324L831,354L821,382L820,391L815,389L823,365L818,360L801,361L772,370L751,368L747,374L735,376L725,389L703,391L680,406L669,416L654,422L639,425L643,419L667,412L677,402L694,391L697,383L696,357L700,348L682,343L682,355L677,352L675,363L665,363L667,370L646,372L641,383L642,392L638,398L621,403L613,400L606,403L604,362L592,358L587,349L580,339L567,331L564,319L565,302L557,303L557,271L479,274L478,270L341,267L326,268L298,267L296,275L286,276L287,267L250,266L171,263L160,263L156,254L179,167Z"},{"n":"Connecticut","d":"M160,263L171,263L250,266L287,267L286,276L296,275L298,267L326,268L341,267L478,270L479,274L479,297L481,345L481,378L479,423L470,425L472,441L467,447L462,443L451,443L437,448L424,447L416,453L405,447L401,455L368,462L366,458L355,458L337,465L333,460L315,460L311,466L298,461L271,467L269,454L263,457L250,475L242,475L227,491L219,486L202,498L198,495L182,501L185,506L179,513L159,515L144,527L138,524L128,531L129,524L115,502L161,474L148,453L151,419L154,355Z"},{"n":"New Hampshire","d":"M535,-508L537,-524L549,-538L547,-542L554,-559L546,-567L558,-570L560,-576L575,-585L585,-571L604,-570L613,-586L623,-413L631,-218L631,-198L634,-128L638,-123L634,-103L637,-101L631,-78L638,-66L665,-38L661,-29L661,-13L685,5L665,43L663,53L658,56L648,49L623,56L617,70L604,66L594,74L595,88L581,88L574,98L489,95L354,90L348,79L344,81L336,58L342,42L342,29L351,27L357,17L353,6L359,-2L355,-16L358,-47L366,-61L362,-74L369,-104Z"},{"n":"Vermont","d":"M202,85L197,71L200,63L200,47L204,-47L366,-61L358,-47L355,-16L359,-2L353,6L357,17L351,27L342,29L342,42L336,58L344,81L348,79L354,90Z"},{"n":"Rhode Island","d":"M592,358L604,362L606,403L593,413L589,391L590,377L583,372L585,406L573,406L572,414L565,415L564,403L575,383L581,368ZM467,447L472,441L470,425L479,423L481,378L481,345L479,297L479,274L557,271L557,303L565,302L564,319L567,331L580,339L587,349L585,359L575,368L571,359L574,351L561,339L556,331L559,359L544,355L552,363L553,380L545,382L550,393L550,409L543,419L538,434L530,433L512,437L493,444L468,451Z"},{"n":"New York","d":"M50,612L54,626L47,635L22,651L14,651L16,641L22,637L25,619ZM-60,-60L204,-47L200,47L200,63L197,71L202,85L179,167L156,254L160,263L154,355L151,419L148,453L161,474L115,502L129,524L128,531L123,540L109,549L108,566L99,566L105,579L117,560L125,563L131,554L146,548L158,548L160,541L175,547L177,539L183,545L196,546L208,551L224,545L225,536L237,534L244,537L294,536L321,532L330,528L351,515L357,506L365,503L374,492L388,488L396,488L384,500L378,501L388,507L391,517L403,520L410,514L421,530L431,526L447,516L448,510L460,507L468,510L464,514L419,535L366,561L332,574L278,594L242,611L213,619L194,622L190,619L147,632L106,630L74,641L77,633L61,634L63,628L56,620L60,612L55,605L59,600L62,586L70,572L83,532L81,528L-8,475L-68,438L-76,426L-60,420Z"}];
+  var PAO_PINS = { Marlborough: [525, 187.7], Medford: [609.1, 169.3], Mitsubishi: [550.5, 204.8], DougCar: [478.3, 207.1], Nissan: [617.8, 224.9], Danbury: [166.4, 428.8] };
+
+  (function () {
+    function $(i) { return document.getElementById(i); }
+    if (!$("pao")) return;
+    var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    function fmtDay(iso) { var p = iso.split("-"); return MON[+p[1] - 1] + " " + (+p[2]); }
+    function usd(v, dec) { dec = dec == null ? 2 : dec; return "$" + v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+    function delta(cur, prev, goodUp) {
+      if (!prev) return "";
+      var p = (cur - prev) / prev * 100, good = goodUp ? p >= 0 : p <= 0;
+      return '<span class="pao-d ' + (good ? "good" : "bad") + '">' + (p >= 0 ? "▲ +" : "▼ ") + p.toFixed(1) + "%</span> ";
+    }
+
+    function render(D, live) {
+      var L = D.locs, S = 0, C = 0, SP = 0, CP = 0;
+      L.forEach(function (l) { S += l.spend; C += l.conv; SP += l.spendPrev; CP += l.convPrev; });
+      var y = D.end.slice(0, 4);
+      $("pao-per").textContent = fmtDay(D.start) + " – " + fmtDay(D.end) + ", " + y;
+      var up = new Date(D.updated);
+      $("pao-upd").textContent = (live ? "Updated " : "Saved snapshot · ") + up.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      $("pao-pill").classList.toggle("is-old", !live);
+      var cmp = "vs. " + fmtDay(D.prevStart) + "–" + (+D.prevEnd.slice(8));
+
+      $("pao-kpis").innerHTML = [
+        ["Total spent", usd(S), delta(S, SP, true) + cmp + " (" + usd(SP, 0) + ")"],
+        ["Leads", C.toLocaleString("en-US"), delta(C, CP, true) + cmp + " (" + CP.toLocaleString("en-US") + ")"],
+        ["Average CPL", C ? usd(S / C) : "—", (C && CP ? delta(S / C, SP / CP, false) + cmp + " (" + usd(SP / CP) + ")" : "")]
+      ].map(function (k) { return '<div class="pao-kpi"><div class="l">' + k[0] + '</div><div class="v">' + k[1] + '</div><div class="c">' + k[2] + "</div></div>"; }).join("");
+
+      var mx = Math.max.apply(null, L.map(function (l) { return l.spend; })) || 1;
+      $("pao-rows").innerHTML = L.slice().sort(function (a, b) { return b.spend - a.spend; }).map(function (l) {
+        return "<tr><td><b>" + l.name + "</b></td><td>" + usd(l.spend) + "</td><td>" + l.conv + "</td><td>" + (l.conv ? usd(l.spend / l.conv) : "—") +
+          '</td><td><div class="pao-share"><i style="width:' + (l.spend / mx * 90) + 'px"></i>' + (S ? (l.spend / S * 100).toFixed(1) : "0") + "%</div></td></tr>";
+      }).join("");
+      $("pao-foot").innerHTML = "<tr><td>Total</td><td>" + usd(S) + "</td><td>" + C.toLocaleString("en-US") + "</td><td>" + (C ? usd(S / C) : "—") + "</td><td>100%</td></tr>";
+
+      chart(D);
+      map(D);
+    }
+
+    function chart(D) {
+      var days = D.dates.map(function (d, i) { var t = 0; D.locs.forEach(function (l) { t += l.days[i] || 0; }); return [d, t]; });
+      var box = $("pao-ch"), old = box.querySelector("svg"); if (old) old.remove();
+      var W = 1000, H = 250, pl = 56, pr = 16, pt = 16, pb = 34, n = days.length;
+      var max = Math.max(500, Math.ceil(Math.max.apply(null, days.map(function (d) { return d[1]; })) / 500) * 500);
+      var x = function (i) { return n > 1 ? pl + i * (W - pl - pr) / (n - 1) : (pl + W - pr) / 2; }, yy = function (v) { return pt + (1 - v / max) * (H - pt - pb); };
+      var step = Math.ceil(n / 12), s = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Amount spent per day, all locations">';
+      for (var g = 0; g <= max; g += max / 4) s += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yy(g) + '" y2="' + yy(g) + '" stroke="#e7e5e4"/><text x="' + (pl - 8) + '" y="' + (yy(g) + 4) + '" text-anchor="end" font-size="12" fill="#78716c">$' + (g >= 1000 ? (g / 1000).toFixed(g % 1000 ? 1 : 0) + "k" : g) + "</text>";
+      days.forEach(function (d, i) { if (i % step === 0 || i === n - 1) s += '<text x="' + x(i) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="12" fill="#78716c">' + fmtDay(d[0]) + "</text>"; });
+      s += '<path d="' + days.map(function (d, i) { return (i ? "L" : "M") + x(i) + "," + yy(d[1]); }).join("") + '" fill="none" stroke="#1c1917" stroke-width="2" stroke-linejoin="round"/>';
+      s += '<line class="xh" y1="' + pt + '" y2="' + (H - pb) + '" stroke="#a8a29e" stroke-dasharray="3 3" opacity="0"/><circle class="xd" r="5" fill="#eab308" stroke="#fff" stroke-width="2" opacity="0"/>';
+      s += '<rect class="hz" x="' + (pl - 10) + '" y="0" width="' + (W - pl - pr + 20) + '" height="' + H + '" fill="transparent"/></svg>';
+      box.insertAdjacentHTML("beforeend", s);
+      var sv = box.querySelector("svg"), tip = $("pao-tip"), xh = sv.querySelector(".xh"), xd = sv.querySelector(".xd");
+      sv.querySelector(".hz").addEventListener("mousemove", function (e) {
+        var r = sv.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+        var i = n > 1 ? Math.max(0, Math.min(n - 1, Math.round((px - pl) / ((W - pl - pr) / (n - 1))))) : 0, d = days[i];
+        xh.setAttribute("x1", x(i)); xh.setAttribute("x2", x(i)); xh.setAttribute("opacity", 1);
+        xd.setAttribute("cx", x(i)); xd.setAttribute("cy", yy(d[1])); xd.setAttribute("opacity", 1);
+        tip.innerHTML = fmtDay(d[0]) + "<b>" + usd(d[1]) + "</b>";
+        tip.style.left = (x(i) / W * r.width) + "px"; tip.style.top = (yy(d[1]) / H * r.height - 8) + "px"; tip.style.opacity = 1;
+      });
+      sv.querySelector(".hz").addEventListener("mouseleave", function () { tip.style.opacity = 0; xh.setAttribute("opacity", 0); xd.setAttribute("opacity", 0); });
+    }
+
+    var mapTimer = null, mapGen = 0;
+    function map(D) {
+      var myGen = ++mapGen;
+      var NS = "http://www.w3.org/2000/svg", svg = $("pao-svg");
+      if (mapTimer) cancelAnimationFrame(mapTimer);
+      svg.innerHTML = ""; $("pao-feed").innerHTML = "";
+      function mk(t, a, p) { var e = document.createElementNS(NS, t); for (var k in a) e.setAttribute(k, a[k]); (p || svg).appendChild(e); return e; }
+      PAO_STATES.forEach(function (s) { mk("path", { d: s.d, "class": "pao-st" + (s.n === "Massachusetts" || s.n === "Connecticut" ? " on" : "") }); });
+      mk("text", { x: 640, y: 300, "class": "pao-stl" }).textContent = "Massachusetts";
+      mk("text", { x: 250, y: 500, "class": "pao-stl" }).textContent = "Connecticut";
+      var OFF = { Marlborough: [-10, -14, "end"], Medford: [12, -4, "start"], Mitsubishi: [-10, 22, "end"], DougCar: [-12, 5, "end"], Nissan: [12, 8, "start"], Danbury: [12, 5, "start"] };
+      var L = D.locs.filter(function (l) { return PAO_PINS[l.k]; }), arcs = mk("g", {}), dots = {}, cnt = {}, gen = 0;
+      L.forEach(function (l) {
+        var p = PAO_PINS[l.k], o = OFF[l.k] || [12, 5, "start"]; cnt[l.k] = 0;
+        mk("circle", { cx: p[0], cy: p[1], r: 7, "class": "pao-ring", style: "animation-delay:" + (Math.random() * 2).toFixed(2) + "s" });
+        dots[l.k] = mk("circle", { cx: p[0], cy: p[1], r: 7, fill: "#eab308", stroke: "#1c1917", "stroke-width": 2 });
+        mk("text", { x: p[0] + o[0], y: p[1] + o[1], "text-anchor": o[2], "class": "pao-ll" }).textContent = l.name;
+      });
+      function split(total, w) {
+        var s = w.reduce(function (a, b) { return a + b; }, 0) || 1, raw = w.map(function (v) { return total * v / s; }), fl = raw.map(Math.floor);
+        var r = total - fl.reduce(function (a, b) { return a + b; }, 0);
+        raw.map(function (v, i) { return [v - fl[i], i]; }).sort(function (a, b) { return b[0] - a[0]; }).slice(0, r).forEach(function (q) { fl[q[1]]++; });
+        return fl;
+      }
+      var ND = D.dates.length, EV = [];
+      var nyNow = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" }).formatToParts(new Date()).reduce(function (o, x) { o[x.type] = x.value; return o; }, {});
+      var isToday = D.end === nyNow.year + "-" + nyNow.month + "-" + nyNow.day, curHour = +nyNow.hour;
+      L.forEach(function (l) {
+        var blocks = []; for (var b = 0; b < 6; b++) { var t = 0; for (var h = b * 4; h < b * 4 + 4; h++) t += (l.hour[h] || 0); blocks.push(t || 1); }
+        var dw = l.days.some(function (v) { return v > 0; }) ? l.days : l.days.map(function () { return 1; });
+        split(l.conv, dw).forEach(function (n, di) { var bw = (isToday && di === ND - 1) ? blocks.map(function (v, bi) { return bi * 4 <= curHour ? v : 0; }) : blocks; split(n, bw).forEach(function (m, bi) { if (m > 0) EV.push({ k: l.k, name: l.name, n: m, t: di + (bi * 4 + Math.random() * 4) / 24, day: D.dates[di], h: bi * 4 }); }); });
+      });
+      EV.sort(function (a, b) { return a.t - b.t; });
+      var mm = Math.max.apply(null, L.map(function (l) { return l.conv; }).concat([1]));
+      function bars() {
+        var tot = 0; L.forEach(function (l) { tot += cnt[l.k]; });
+        $("pao-total").firstChild.nodeValue = tot.toLocaleString("en-US");
+        $("pao-bars").innerHTML = L.slice().sort(function (a, b) { return b.conv - a.conv; }).map(function (l) {
+          return '<div class="pao-bar"><div><span>' + l.name + "</span><b>" + cnt[l.k] + " / " + l.conv + '</b></div><div class="pao-track"><span style="width:' + (cnt[l.k] / mm * 100) + '%"></span></div></div>';
+        }).join("");
+      }
+      bars();
+      function fly(e, g) {
+        var b = PAO_PINS[e.k], ang = Math.random() * Math.PI * 2, r = 45 + Math.random() * 70, a = [b[0] + Math.cos(ang) * r, b[1] + Math.sin(ang) * r * .8];
+        var d = "M" + a[0] + "," + a[1] + " Q" + ((a[0] + b[0]) / 2) + "," + (Math.min(a[1], b[1]) - 25 - Math.random() * 20) + " " + b[0] + "," + b[1];
+        var src = mk("circle", { cx: a[0], cy: a[1], r: 2.5, fill: "#22c55e" }, arcs), path = mk("path", { d: d, fill: "none", stroke: "#eab308", "stroke-width": 1.4, "stroke-linecap": "round", opacity: .8 }, arcs);
+        var Ln = path.getTotalLength(); path.style.strokeDasharray = Ln; path.style.strokeDashoffset = Ln;
+        var head = mk("circle", { r: 3, fill: "#fff" }, arcs), t0 = performance.now();
+        (function step(t) {
+          var q = Math.max(0, Math.min(1, (t - t0) / 900)); path.style.strokeDashoffset = Ln * (1 - q);
+          var pt = path.getPointAtLength(Ln * q); head.setAttribute("cx", pt.x); head.setAttribute("cy", pt.y);
+          if (q < 1) { requestAnimationFrame(step); return; }
+          head.remove();
+          if (g === gen && myGen === mapGen) {
+            dots[e.k].classList.remove("pao-hit"); void dots[e.k].getBBox(); dots[e.k].classList.add("pao-hit");
+            cnt[e.k] += e.n; bars();
+            var li = document.createElement("li"); li.innerHTML = "<i></i><span></span><em></em>";
+            li.querySelector("span").textContent = e.name + " +" + e.n + (e.n > 1 ? " leads" : " lead");
+            li.querySelector("em").textContent = fmtDay(e.day) + " · " + ("0" + e.h).slice(-2) + "h–" + ("0" + (e.h + 4)).slice(-2) + "h";
+            var f = $("pao-feed"); f.insertBefore(li, f.firstChild); while (f.children.length > 5) f.lastChild.remove();
+          }
+          path.style.transition = src.style.transition = "opacity 1s";
+          setTimeout(function () { path.style.opacity = 0; src.style.opacity = 0; }, 500);
+          setTimeout(function () { path.remove(); src.remove(); }, 1600);
+        })(t0);
+      }
+      var RUN = Math.max(15000, ND * 3500), HOLD = 6000, start = null, idx = 0;
+      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce) { L.forEach(function (l) { cnt[l.k] = l.conv; }); bars(); $("pao-pbar").style.width = "100%"; $("pao-day").textContent = fmtDay(D.start) + " – " + fmtDay(D.end); return; }
+      function loop(t) {
+        if (start === null) start = t;
+        var el = t - start, pos = Math.min(1, el / RUN) * ND;
+        while (idx < EV.length && EV[idx].t <= pos) { fly(EV[idx], gen); idx++; }
+        $("pao-pbar").style.width = (pos / ND * 100) + "%";
+        $("pao-day").textContent = pos >= ND ? fmtDay(D.start) + " – " + fmtDay(D.end) + " · complete" : "Replaying · " + fmtDay(D.dates[Math.min(ND - 1, Math.floor(pos))]);
+        if (el > RUN + HOLD) { start = t; idx = 0; gen++; L.forEach(function (l) { cnt[l.k] = 0; }); bars(); $("pao-feed").innerHTML = ""; }
+        mapTimer = requestAnimationFrame(loop);
+      }
+      mapTimer = requestAnimationFrame(loop);
+    }
+
+    function load() {
+      fetch("api/data", { cache: "no-store" })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (d) { if (!d || !d.locs) throw new Error("bad data"); render(d, true); })
+        .catch(function () { render(PAO_SNAPSHOT, false); });
+    }
+    load();
+    setInterval(load, 30 * 60 * 1000); // refresh every 30 min while the page stays open
   })();
 </script>
 <!-- ===== COPY UNTIL HERE ===== -->
