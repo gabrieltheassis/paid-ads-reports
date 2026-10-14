@@ -69,13 +69,28 @@ function periods() {
   return { start, end, prevStart, prevEnd, dates };
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Reportei rejects bursts of parallel requests (HTTP 429), so locations are fetched one at a time,
+// with a short retry when the API asks us to slow down.
+async function postWithRetry(url, init, label) {
+  for (let attempt = 1; ; attempt++) {
+    const r = await fetch(url, init);
+    if (r.status !== 429 || attempt >= 4) {
+      if (!r.ok) throw new Error(`Reportei ${label}: HTTP ${r.status}`);
+      return r;
+    }
+    const ra = Number(r.headers.get("retry-after"));
+    await sleep(ra > 0 && ra < 20 ? ra * 1000 : 1200 * attempt);
+  }
+}
+
 async function fetchLocation(loc, p, key) {
-  const r = await fetch(`${API}/integrations/${loc.integration}/widgets/value`, {
+  const r = await postWithRetry(`${API}/integrations/${loc.integration}/widgets/value`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
     body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd, widgets: WIDGETS })
-  });
-  if (!r.ok) throw new Error(`Reportei ${loc.name}: HTTP ${r.status}`);
+  }, loc.name);
   const data = (await r.json()).data || {};
   const num = (v) => (v == null || v === "" ? 0 : Number(v));
 
@@ -104,6 +119,9 @@ async function fetchLocation(loc, p, key) {
   };
 }
 
+// Last good answer per period, kept while this server instance is warm (used if Reportei is busy).
+const lastGood = new Map();
+
 module.exports = async (req, res) => {
   const key = process.env.REPORTEI_API_KEY;
   if (!key) {
@@ -112,18 +130,36 @@ module.exports = async (req, res) => {
   }
   try {
     const p = periodsFrom(req.query || {});
-    const locs = await Promise.all(LOCATIONS.map((l) => fetchLocation(l, p, key)));
+    const cacheKey = [p.start, p.end, p.prevStart, p.prevEnd].join("|");
+    let locs;
+    try {
+      locs = [];
+      for (const l of LOCATIONS) locs.push(await fetchLocation(l, p, key));
+    } catch (err) {
+      const stale = lastGood.get(cacheKey);
+      if (!stale) throw err;
+      res.setHeader("Cache-Control", "s-maxage=30");
+      res.status(200).json(Object.assign({}, stale, { stale: true }));
+      return;
+    }
     // Cache on Vercel's edge for 5 min (keeps the page "live" without hammering the Reportei API).
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
-    res.status(200).json({
+    const payload = {
       updated: new Date().toISOString(),
       start: p.start, end: p.end, prevStart: p.prevStart, prevEnd: p.prevEnd,
       dates: p.dates, locs,
       // Optional: monthly budget for everyone, set as MONTHLY_BUDGET on Vercel (e.g. 25000)
       budget: Number(process.env.MONTHLY_BUDGET) || null
-    });
+    };
+    lastGood.set(cacheKey, payload);
+    if (lastGood.size > 30) lastGood.delete(lastGood.keys().next().value);
+    res.status(200).json(payload);
   } catch (e) {
-    res.setHeader("Cache-Control", "no-store");
+    // Short cache on errors so a busy API isn't hit again by every visitor.
+    res.setHeader("Cache-Control", "s-maxage=20");
     res.status(502).json({ error: String(e.message || e) });
   }
 };
+
+// Allow time for one-at-a-time requests and retries.
+module.exports.config = { maxDuration: 30 };
