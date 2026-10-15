@@ -288,6 +288,25 @@
   .bud-share.on::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--live)}
   .bud-act .btn[disabled]{opacity:.6;cursor:wait}
   .pill-st.sm{font-size:11px;padding:2px 8px}
+  .stk{position:relative;height:12px;border-radius:99px;background:var(--bg2);border:1px solid var(--line);display:flex;margin:6px 0 30px}
+  .stk>span.m{background:#1877f2;border-radius:99px 0 0 99px}.stk>span.g{background:#34a853}
+  .stk .mk{position:absolute;top:-6px;bottom:-6px;width:2px;margin-left:-1px;background:var(--strong);border-radius:2px}
+  .stk .mk em{position:absolute;top:24px;left:50%;transform:translateX(-50%);white-space:nowrap;font-style:normal;font-size:11px;color:var(--muted)}
+  .pdot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}.pdot.m,.pb .f.m{background:#1877f2}.pdot.g,.pb .f.g{background:#34a853}
+  .plats{margin-top:16px;border-top:1px solid var(--line)}
+  .plat{display:grid;grid-template-columns:minmax(150px,1.2fr) minmax(200px,2.2fr) 110px 100px 120px;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink2)}
+  .plat:first-child{border-top:0}
+  .plat.h{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 0 6px}
+  .plat .r{text-align:right}.plat .neg{color:var(--bad)}
+  .plat .nm{display:flex;align-items:center;gap:10px}.plat .nm b,.plat .nm>span>span{font-weight:600}
+  .plat .nm>span:last-child{font-weight:600;color:var(--strong)}
+  .plat .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+  .plat .sp b{color:var(--strong)}.plat .sp i{font-style:normal;color:var(--muted)}.plat .share{color:var(--muted);font-size:12px}
+  .plat .pb{display:block;position:relative;height:6px;border-radius:99px;background:var(--bg2);border:1px solid var(--line);margin-top:7px}
+  .plat .pb .f{position:absolute;left:0;top:0;bottom:0;border-radius:99px}
+  .plat .pb .t{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--strong);border-radius:2px}
+  .plat>span:last-child{text-align:right}
+  @media (max-width:700px){.plat.h{display:none}.plat{grid-template-columns:1fr auto;gap:6px 12px}.plat>span:nth-child(2){grid-column:1/-1;order:3}.plat>span:nth-child(3),.plat>span:nth-child(4){display:none}}
   .bud-locs{margin-top:16px;border-top:1px solid var(--line);padding-top:4px}
   .bud-lh,.bud-lr{display:grid;grid-template-columns:minmax(140px,1.2fr) minmax(180px,2fr) 110px 100px 120px;gap:14px;align-items:center}
   .bud-lh{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:10px 0 6px}
@@ -467,7 +486,8 @@
   ];
   /* Monthly budget shown to everyone. Format "YYYY-MM": amount. (Can also be set with the MONTHLY_BUDGET variable on Vercel.) */
   /* Fixed monthly ad budget (all locations). Change this number to update it for everyone. */
-  var MONTHLY_BUDGET = 50500;
+  var MONTHLY_BUDGET = 50500;        // Meta Ads
+  var GOOGLE_MONTHLY_BUDGET = 5000;  // Google Ads (all accounts)
   var POLL_MS = 120000; // how often the page checks for new data (the API itself refreshes every 5 min)
 
   /* Last saved data — used only when the live API isn't reachable (e.g. GitHub Pages preview). */
@@ -932,18 +952,39 @@
           '</div>';
         return;
       }
-      var spent = t.S, pct = b.total ? spent / b.total * 100 : 0, left = b.total - spent, st = paceStatus(spent, b.total, m);
+      var G = D.google || null, gOk = !!(G && !G.error && G.spend != null), gB = GOOGLE_MONTHLY_BUDGET;
+      var metaS = t.S, gS = gOk ? G.spend : 0, totB = b.total + gB, spent = metaS + gS;
+      var pct = totB ? spent / totB * 100 : 0, left = totB - spent, st = paceStatus(spent, totB, m);
       var perDay = m.daysLeft > 0 ? Math.max(0, left) / m.daysLeft : 0;
+      var mPct = totB ? metaS / totB * 100 : 0, gPct = totB ? gS / totB * 100 : 0;
+      function share(x) { return spent > 0 ? Math.round(x / spent * 100) + "% of spend" : ""; }
+      function platRow(cls, name, sub, s, a, ok) {
+        var l = a - s, ps = paceStatus(s, a, m), p2 = a ? s / a * 100 : 0;
+        return '<div class="plat"><span class="nm"><span class="pdot ' + cls + '"></span><span>' + name + '<small>' + sub + '</small></span></span>' +
+          '<span class="sp">' + (ok ? '<b class="num">' + usd(s, 0) + '</b> <i>/ ' + usd(a, 0) + '</i><span class="share">' + (share(s) ? " · " + share(s) : "") + '</span>' +
+            '<span class="pb"><span class="f ' + cls + '" style="width:' + Math.min(100, p2) + '%"></span><span class="t" style="left:' + m.expectPct + '%"></span></span>'
+            : '<i>Data unavailable right now</i>') + '</span>' +
+          '<span class="num r' + (l < 0 ? " neg" : "") + '">' + (ok ? (l < 0 ? "−" : "") + usd(Math.abs(l), 0) : "—") + '</span>' +
+          '<span class="num r">' + (ok && m.daysLeft ? usd(Math.max(0, l) / m.daysLeft, 0) : "—") + '</span>' +
+          '<span>' + (ok ? '<span class="pill-st sm ' + ps.c + '">' + ps.t + '</span>' : "") + '</span></div>';
+      }
+      var gSub = !G ? "Not loaded" : G.error ? "Connection error" : (G.accounts ? G.accounts + (G.accounts === 1 ? " account" : " accounts") + " connected" : "No accounts connected yet");
       var html =
-        '<div class="bud-top"><div><h2 id="bg-h">' + m.name + ' budget</h2><p>All locations · ' + m.daysLeft + (m.daysLeft === 1 ? " day" : " days") + ' left in the month</p></div>' +
+        '<div class="bud-top"><div><h2 id="bg-h">' + m.name + ' budget</h2><p>Meta Ads + Google Ads · all locations · ' + m.daysLeft + (m.daysLeft === 1 ? " day" : " days") + ' left in the month</p></div>' +
         '<div class="bud-r"><span class="pill-st ' + st.c + '">' + st.t + '</span></div></div>' +
         '<div class="bud-nums">' +
-          '<div><span>Budget</span><b class="num">' + usd(b.total, 0) + '</b></div>' +
-          '<div><span>Spent</span><b class="num">' + usd(spent, 0) + '</b><em>' + pct.toFixed(1) + '% used</em></div>' +
+          '<div><span>Total budget</span><b class="num">' + usd(totB, 0) + '</b><em>' + usd(b.total, 0) + ' Meta + ' + usd(gB, 0) + ' Google</em></div>' +
+          '<div><span>Total spent</span><b class="num">' + usd(spent, 0) + '</b><em>' + pct.toFixed(1) + '% used</em></div>' +
           '<div class="hl"><span>' + (left >= 0 ? "Remaining" : "Over budget") + '</span><b class="num">' + usd(Math.abs(left), 0) + '</b><em>' + (left >= 0 ? (100 - pct).toFixed(1) + "% left" : "") + '</em></div>' +
           '<div><span>Ideal daily spend</span><b class="num">' + (m.daysLeft ? usd(perDay, 0) : "—") + '</b><em>to finish on budget</em></div>' +
-        '</div>' + bar(pct, m.expectPct, st.c, true) +
-        '<p class="bud-note">' + st.n + (b.src === "local" ? ' · <span title="Saved in this browser only">saved on this device only</span>' : "") + '</p>';
+        '</div>' +
+        '<div class="stk" role="img" aria-label="Meta ' + usd(metaS, 0) + ', Google ' + usd(gS, 0) + ' of ' + usd(totB, 0) + '; expected by today ' + m.expectPct.toFixed(0) + '%">' +
+          '<span class="m" style="width:' + Math.min(100, mPct) + '%"></span><span class="g" style="width:' + Math.max(0, Math.min(100 - mPct, gPct)) + '%"></span>' +
+          '<span class="mk" style="left:' + m.expectPct + '%"><em>Today\'s target ' + m.expectPct.toFixed(0) + '%</em></span></div>' +
+        '<p class="bud-note">' + st.n + '</p>' +
+        '<div class="plats"><div class="plat h"><span>Platform</span><span>Spent / budget</span><span class="r">Remaining</span><span class="r">Per day</span><span></span></div>' +
+          platRow("m", "Meta Ads", D.locs.length + " accounts", metaS, b.total, true) +
+          platRow("g", "Google Ads", gSub, gS, gB, gOk) + '</div>';
       var keys = Object.keys(b.locs);
       if (keys.length) {
         html += '<div class="bud-locs"><div class="bud-lh"><span>Location</span><span>Spent / budget</span><span>Remaining</span><span>Per day</span><span></span></div>' +
