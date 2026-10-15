@@ -28,6 +28,74 @@ const WIDGETS = [
     metrics: ["impressions", "reach"], dimensions: [{ field: "hourly_stats_aggregated_by_audience_time_zone" }] }
 ];
 
+// ---------- Google Ads (total spend only, all locations) ----------
+// Reportei project id per location. Every Google Ads account connected in these projects is summed
+// automatically, so new accounts show up on the dashboard as soon as they are connected in Reportei.
+const API2 = "https://app.reportei.com/api/v2";
+const GOOGLE_PROJECTS = {
+  Marlborough: 1341647, Medford: 1342532, Mitsubishi: 1342545,
+  DougCar: 1342549, Nissan: 1342535, Danbury: 1342406
+};
+const isGoogleAds = (slug) => /google[_-]?ads|adwords/i.test(slug || "");
+let googleMetricCache = {}; // slug -> metric definition (cost/spend number widget)
+
+async function getJSON2(url, key, init) {
+  const r = await postWithRetry(url, Object.assign({
+    headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" }
+  }, init || {}), "Google Ads");
+  return r.json();
+}
+
+async function googleIntegrations(key) {
+  const out = [];
+  for (const [k, pid] of Object.entries(GOOGLE_PROJECTS)) {
+    const j = await getJSON2(`${API2}/integrations?project_id=${pid}&per_page=100`, key);
+    (j.data || []).forEach((i) => {
+      if (isGoogleAds(i.slug) && Number(i.project_id) === pid && (!i.status || /^(active|1|true)$/i.test(String(i.status))))
+        out.push({ k, id: i.id, slug: i.slug, name: i.name });
+    });
+  }
+  return out;
+}
+
+async function googleCostMetric(slug, key) {
+  if (googleMetricCache[slug]) return googleMetricCache[slug];
+  const j = await getJSON2(`${API2}/metrics?integration_slug=${encodeURIComponent(slug)}&per_page=500`, key);
+  const list = j.data || [];
+  const score = (m) => {
+    const rk = String(m.reference_key || "").toLowerCase(), comp = String(m.component || "");
+    if (!/^number/.test(comp)) return -1;
+    if (/:(cost|spend|amount_spent|investment)$/.test(rk)) return 3;
+    if (/:(metrics\.)?cost(_micros)?$/.test(rk)) return 2;
+    if (/(cost|spend|invest)/.test(rk) && !/(per|cpc|cpm|cpa|cpl|conv|avg|average|_by_)/.test(rk)) return 1;
+    return -1;
+  };
+  const best = list.map((m) => [score(m), m]).filter((x) => x[0] > 0).sort((a, b) => b[0] - a[0])[0];
+  if (!best) throw new Error("Google Ads cost metric not found for " + slug);
+  googleMetricCache[slug] = best[1];
+  return best[1];
+}
+
+async function fetchGoogle(p, key) {
+  const ints = await googleIntegrations(key);
+  let spend = 0, spendPrev = 0;
+  for (const i of ints) {
+    const m = await googleCostMetric(i.slug, key);
+    const j = await getJSON2(`${API2}/metrics/get-data`, key, {
+      method: "POST",
+      body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd,
+        integration_id: i.id, metrics: [m] })
+    });
+    const d = (j.data || {})[m.id] || Object.values(j.data || {})[0] || {};
+    spend += Number(d.values) || 0;
+    spendPrev += Number(d.comparison && d.comparison.values) || 0;
+  }
+  return {
+    spend: Math.round(spend * 100) / 100, spendPrev: Math.round(spendPrev * 100) / 100,
+    accounts: ints.length, locations: [...new Set(ints.map((i) => i.k))]
+  };
+}
+
 const pad = (n) => String(n).padStart(2, "0");
 const iso = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
 
@@ -142,12 +210,16 @@ module.exports = async (req, res) => {
       res.status(200).json(Object.assign({}, stale, { stale: true }));
       return;
     }
+    // Google Ads total: never blocks the Meta numbers if it fails.
+    let google = null;
+    try { google = await fetchGoogle(p, key); }
+    catch (err) { google = { error: String(err.message || err) }; }
     // Cache on Vercel's edge for 5 min (keeps the page "live" without hammering the Reportei API).
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
     const payload = {
       updated: new Date().toISOString(),
       start: p.start, end: p.end, prevStart: p.prevStart, prevEnd: p.prevEnd,
-      dates: p.dates, locs,
+      dates: p.dates, locs, google,
       // Optional: monthly budget for everyone, set as MONTHLY_BUDGET on Vercel (e.g. 25000)
       budget: Number(process.env.MONTHLY_BUDGET) || null
     };
