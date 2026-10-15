@@ -39,18 +39,36 @@ const GOOGLE_PROJECTS = {
 const isGoogleAds = (slug) => /google[_-]?ads|adwords/i.test(slug || "");
 let googleMetricCache = {}; // slug -> metric definition (cost/spend number widget)
 
-async function getJSON2(url, key, init) {
-  const r = await postWithRetry(url, Object.assign({
-    headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" }
-  }, init || {}), "Google Ads");
-  return r.json();
+async function getJSON2(url, key, init, step) {
+  for (let attempt = 1; ; attempt++) {
+    const r = await fetch(url, Object.assign({
+      headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" }
+    }, init || {}));
+    if (r.status === 429 && attempt < 4) { await sleep(1200 * attempt); continue; }
+    if (!r.ok) {
+      const body = (await r.text()).slice(0, 300);
+      throw new Error(`Google Ads ${step}: HTTP ${r.status} ${body}`);
+    }
+    return r.json();
+  }
+}
+
+async function getAllPages(url, key, step) {
+  const out = [];
+  for (let page = 1; page <= 20; page++) {
+    const j = await getJSON2(url + (url.includes("?") ? "&" : "?") + "page=" + page, key, null, step);
+    out.push(...(j.data || []));
+    const last = j.meta && Number(j.meta.last_page);
+    if (!last || page >= last) break;
+  }
+  return out;
 }
 
 async function googleIntegrations(key) {
   const out = [];
   for (const [k, pid] of Object.entries(GOOGLE_PROJECTS)) {
-    const j = await getJSON2(`${API2}/integrations?project_id=${pid}&per_page=100`, key);
-    (j.data || []).forEach((i) => {
+    const list = await getAllPages(`${API2}/integrations?project_id=${pid}`, key, "integrations");
+    list.forEach((i) => {
       if (isGoogleAds(i.slug) && Number(i.project_id) === pid && (!i.status || /^(active|1|true)$/i.test(String(i.status))))
         out.push({ k, id: i.id, slug: i.slug, name: i.name });
     });
@@ -60,8 +78,7 @@ async function googleIntegrations(key) {
 
 async function googleCostMetric(slug, key) {
   if (googleMetricCache[slug]) return googleMetricCache[slug];
-  const j = await getJSON2(`${API2}/metrics?integration_slug=${encodeURIComponent(slug)}&per_page=500`, key);
-  const list = j.data || [];
+  const list = await getAllPages(`${API2}/metrics?integration_slug=${encodeURIComponent(slug)}`, key, "metrics " + slug);
   const score = (m) => {
     const rk = String(m.reference_key || "").toLowerCase(), comp = String(m.component || "");
     if (!/^number/.test(comp)) return -1;
@@ -84,8 +101,8 @@ async function fetchGoogle(p, key) {
     const j = await getJSON2(`${API2}/metrics/get-data`, key, {
       method: "POST",
       body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd,
-        integration_id: i.id, metrics: [m] })
-    });
+        integration_id: i.id, metrics: [{ id: m.id, reference_key: m.reference_key, component: m.component, metrics: m.metrics, type: m.type }] })
+    }, "get-data " + i.id + " " + m.reference_key);
     const d = (j.data || {})[m.id] || Object.values(j.data || {})[0] || {};
     spend += Number(d.values) || 0;
     spendPrev += Number(d.comparison && d.comparison.values) || 0;
