@@ -21,6 +21,7 @@
   body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
     background:radial-gradient(1200px 600px at 15% -10%,rgba(234,179,8,.10),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(99,102,241,.06),transparent 60%),var(--bg);min-height:100vh}
   button{font:inherit;color:inherit}
+  .acct{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;background:var(--line);color:var(--ink2);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:.02em;vertical-align:1px;white-space:nowrap}
   .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"cv11" 1}
   .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -457,12 +458,12 @@
 <script>
   /* ===== EDIT HERE: name | state (MA, CT…) | Reportei public link | key used by the data API ===== */
   var LOCATIONS = [
-    { key: "Marlborough", nome: "Marlborough", local: "MA", link: "https://app.reportei.com/dashboard/d7vNLcNWOUJGO5Pjbmfzm3r62F2fUTOo" },
-    { key: "Medford",     nome: "Medford",     local: "MA", link: "https://app.reportei.com/dashboard/p3Vfhsntv2q4qactebgFDs1sZikDXSz6" },
-    { key: "Mitsubishi",  nome: "Mitsubishi",  local: "MA", link: "https://app.reportei.com/dashboard/zFkprEcypXq67JuN7jjQdECinXOpTRTo", city: "Framingham" },
-    { key: "DougCar",     nome: "Doug Car",    local: "MA", link: "https://app.reportei.com/dashboard/U7nUsa3n37aeS4u6grftnmsdg5Q9S4OC" },
-    { key: "Nissan",      nome: "Nissan",      local: "MA", city: "Chelmsford", link: "https://app.reportei.com/dashboard/lIYhRh7KdUUqYgsmQBnNzNEE3qW0C8yx" },
-    { key: "Danbury",     nome: "Danbury",     local: "CT", link: "https://app.reportei.com/dashboard/1rLRsuaf4ltx7QR4B8FK4kuPSQ41HngV" }
+    { key: "Marlborough", nome: "Marlborough", local: "MA", acct: "1328", link: "https://app.reportei.com/dashboard/d7vNLcNWOUJGO5Pjbmfzm3r62F2fUTOo" },
+    { key: "Medford",     nome: "Medford",     local: "MA", acct: "2727", link: "https://app.reportei.com/dashboard/p3Vfhsntv2q4qactebgFDs1sZikDXSz6" },
+    { key: "Mitsubishi",  nome: "Mitsubishi",  local: "MA", acct: "3720", link: "https://app.reportei.com/dashboard/zFkprEcypXq67JuN7jjQdECinXOpTRTo", city: "Framingham" },
+    { key: "DougCar",     nome: "Doug Car",    local: "MA", acct: "3128", link: "https://app.reportei.com/dashboard/U7nUsa3n37aeS4u6grftnmsdg5Q9S4OC" },
+    { key: "Nissan",      nome: "Nissan",      local: "MA", city: "Chelmsford", acct: "0431", link: "https://app.reportei.com/dashboard/lIYhRh7KdUUqYgsmQBnNzNEE3qW0C8yx" },
+    { key: "Danbury",     nome: "Danbury",     local: "CT", acct: "2610", link: "https://app.reportei.com/dashboard/1rLRsuaf4ltx7QR4B8FK4kuPSQ41HngV" }
   ];
   /* Monthly budget shown to everyone. Format "YYYY-MM": amount. (Can also be set with the MONTHLY_BUDGET variable on Vercel.) */
   /* Fixed monthly ad budget (all locations). Change this number to update it for everyone. */
@@ -494,6 +495,7 @@
       return '<span class="d ' + (good ? "good" : "bad") + '">' + (p >= 0 ? "▲ " : "▼ ") + Math.abs(p).toFixed(1) + "%</span> ";
     }
     function locByKey(k) { for (var i = 0; i < LOCATIONS.length; i++) if (LOCATIONS[i].key === k) return LOCATIONS[i]; return null; }
+    function acctTag(l) { return l && l.acct ? '<span class="acct" title="Ad account">#' + l.acct + "</span>" : ""; }
     function stateName(l) { return l.city ? l.city + ", " + l.local : (STATES[l.local] || l.local || ""); }
 
     var S = { data: null, month: null, live: false, mode: "live", metric: "leads", sort: { k: "spend", dir: -1 }, nextAt: 0, range: { preset: "mtd" } };
@@ -653,7 +655,7 @@
       var D = S.data, tdm = todayMap();
       return D.locs.map(function (l, i) {
         var L = locByKey(l.k) || { nome: l.name, local: "" };
-        return { k: l.k, name: L.nome || l.name, sub: stateName(L), spend: l.spend, conv: l.conv, cpl: l.conv ? l.spend / l.conv : Infinity, today: tdm[l.k] || 0 };
+        return { k: l.k, name: L.nome || l.name, acct: acctTag(L), sub: stateName(L), spend: l.spend, conv: l.conv, cpl: l.conv ? l.spend / l.conv : Infinity, today: tdm[l.k] || 0 };
       });
     }
     function renderTable() {
@@ -662,7 +664,7 @@
       R.sort(function (a, b) { return k === "name" ? dir * a.name.localeCompare(b.name) : dir * (a[k] - b[k]); });
       $("rows").innerHTML = R.map(function (r) {
         return '<tr data-k="' + r.k + '" tabindex="0" aria-label="Open ' + esc(r.name) + ' report">' +
-          '<td><div class="who"><span class="av">' + initials(r.name) + '</span><span><b>' + esc(r.name) + "</b><small>" + esc(r.sub) + "</small></span></div></td>" +
+          '<td><div class="who"><span class="av">' + initials(r.name) + '</span><span><b>' + esc(r.name) + r.acct + "</b><small>" + esc(r.sub) + "</small></span></div></td>" +
           '<td class="num">' + usd(r.spend) + '</td><td class="num">' + int(r.conv) + '</td><td class="num">' + (isFinite(r.cpl) ? usd(r.cpl) : "—") +
           (best && best.k === r.k ? '<span class="cpl-best">Best</span>' : "") + "</td>" +
           '<td class="num"><span class="today-n' + (r.today ? "" : " zero") + '">' + (r.today ? "+" + r.today : "0") + "</span></td>" +
@@ -947,7 +949,7 @@
         html += '<div class="bud-locs"><div class="bud-lh"><span>Location</span><span>Spent / budget</span><span>Remaining</span><span>Per day</span><span></span></div>' +
           D.locs.filter(function (l) { return b.locs[l.k] > 0; }).sort(function (x, y) { return b.locs[y.k] - b.locs[x.k]; }).map(function (l) {
             var a = b.locs[l.k], lp = l.spend / a * 100, ll = a - l.spend, ls = paceStatus(l.spend, a, m), L = locByKey(l.k) || { nome: l.name };
-            return '<div class="bud-lr"><span class="who"><span class="av">' + initials(L.nome || l.name) + '</span><b>' + esc(L.nome || l.name) + '</b></span>' +
+            return '<div class="bud-lr"><span class="who"><span class="av">' + initials(L.nome || l.name) + '</span><b>' + esc(L.nome || l.name) + acctTag(L) + '</b></span>' +
               '<span class="num">' + usd(l.spend, 0) + ' <i>/ ' + usd(a, 0) + '</i>' + bar(lp, m.expectPct, ls.c, false) + '</span>' +
               '<span class="num ' + (ll < 0 ? "neg" : "") + '">' + (ll < 0 ? "−" : "") + usd(Math.abs(ll), 0) + '</span>' +
               '<span class="num">' + (m.daysLeft ? usd(Math.max(0, ll) / m.daysLeft, 0) : "—") + '</span>' +
@@ -983,7 +985,7 @@
       $("pk-list").innerHTML = PK.items.length ? PK.items.map(function (l, i) {
         var s = statsFor(l.key);
         return '<li role="option" aria-selected="' + (i === PK.sel) + '"><button type="button" class="loc' + (i === PK.sel ? " kb" : "") + (l.link ? "" : " dis") + '" data-k="' + l.key + '">' +
-          '<span class="av">' + initials(l.nome) + '</span><span class="loc-m"><b>' + esc(l.nome) + '</b><small><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>' + esc(stateName(l)) + "</small></span>" +
+          '<span class="av">' + initials(l.nome) + '</span><span class="loc-m"><b>' + esc(l.nome) + acctTag(l) + '</b><small><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>' + esc(stateName(l)) + "</small></span>" +
           (s ? '<span class="loc-s"><span><b class="num">' + int(s.conv) + "</b>leads</span><span><b class=\"num\">" + (s.conv ? usd(s.spend / s.conv) : "—") + "</b>CPL</span></span>" : "") +
           '<span class="loc-go">' + (l.link ? "Open" : "Soon") + ' <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button></li>';
       }).join("") : '<li class="none">No location matches “' + esc(q) + '”.</li>';
@@ -1035,7 +1037,7 @@
       var m = /^#r=(.+)$/.exec(location.hash), l = m && locByKey(decodeURIComponent(m[1])), v = $("viewer"), fr = $("v-frame");
       if (l && l.link) {
         if (fr.getAttribute("src") !== l.link) { $("v-load").style.display = ""; fr.style.background = "transparent"; fr.setAttribute("src", l.link); }
-        $("v-av").textContent = initials(l.nome); $("v-name").textContent = l.nome; $("v-state").textContent = stateName(l);
+        $("v-av").textContent = initials(l.nome); $("v-name").innerHTML = esc(l.nome) + acctTag(l); $("v-state").textContent = stateName(l);
         $("v-switch").value = l.key;
         v.classList.add("open"); v.setAttribute("aria-hidden", "false"); document.body.classList.add("viewing");
         setTimeout(function () { $("v-back").focus(); }, 30);
