@@ -11,7 +11,7 @@ const TZ = "America/New_York";
 // integration: Reportei Meta Ads integration id of THIS panel's ad account (null = not connected yet → shows 0).
 const LOCATIONS = [
   { k: "Marlborough", name: "Marlborough", integration: 3824696 },
-  { k: "Medford",     name: "Medford",     integration: 3830133 },
+  { k: "Medford",     name: "Medford",     integration: 3824697 },
   { k: "Mitsubishi",  name: "Mitsubishi",  integration: 3824698 },
   { k: "Nissan",      name: "Nissan",      integration: 3824737 },
   { k: "Danbury",     name: "Danbury",     integration: 3824738 }
