@@ -150,6 +150,30 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: "REPORTEI_API_KEY is not set" });
     return;
   }
+  // TEMP debug (to be removed): raw values of candidate lead metrics for one location.
+  if (req.query && req.query.debugleads) {
+    const loc = LOCATIONS.find((l) => l.k === req.query.debugleads) || LOCATIONS[4];
+    const p = periodsFrom(req.query || {});
+    const cands = [
+      ["leadgen_grouped", "fb_ads:actions_leadgen_grouped", ["actions:leadgen_grouped"]],
+      ["lead", "fb_ads:actions_lead", ["actions:lead"]],
+      ["onsite_lead_grouped", "fb_ads:actions_onsite_conversion.lead_grouped", ["actions:onsite_conversion.lead_grouped"]],
+      ["facebook_leads", "fb_ads:facebook_leads", ["facebook_leads"]],
+      ["facebook_leads2", "fb_ads:facebook_leads", ["actions:leadgen_grouped"]]
+    ];
+    const out = {};
+    for (const [id, rk, m] of cands) {
+      try {
+        const r = await fetch(`${API}/integrations/${loc.integration}/widgets/value`, { method: "POST",
+          headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ start: p.start, end: p.end, widgets: [{ id, reference_key: rk, component: "number_v1", metrics: m }] }) });
+        out[id] = { status: r.status, body: (await r.text()).slice(0, 400) };
+      } catch (e) { out[id] = { error: String(e) }; }
+    }
+    res.setHeader("Cache-Control", "no-store");
+    res.status(200).json({ loc: loc.name, out });
+    return;
+  }
   try {
     const p = periodsFrom(req.query || {});
     const cacheKey = [p.start, p.end, p.prevStart, p.prevEnd].join("|");
