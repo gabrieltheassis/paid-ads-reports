@@ -17,6 +17,14 @@ const LOCATIONS = [
   { k: "Danbury",     name: "Danbury",     integration: 3824738 }
 ];
 
+// Native Meta instant-form leads ("On-Facebook Leads Coming from Messenger and Instant Forms" in Reportei).
+// Added to the WhatsApp/Messenger conversations so Leads = conversations + form leads.
+const FORM_WIDGETS = [
+  { id: "form_leads", reference_key: "fb_ads:actions_leadgen_grouped", component: "number_v1", metrics: ["actions:leadgen_grouped"] },
+  { id: "form_leads_by_date", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "line",
+    metrics: ["actions:leadgen_grouped"], dimensions: [{ field: "date_start" }] }
+];
+
 const WIDGETS = [
   { id: "spend", reference_key: "fb_ads:spend", component: "number_v1", metrics: ["spend"] },
   { id: "leads", reference_key: "fb_ads:actions_onsite_conversion.messaging_conversation_started_7d", component: "number_v1",
@@ -88,15 +96,17 @@ async function postWithRetry(url, init, label) {
 
 async function fetchLocation(loc, p, key) {
   if (!loc.integration) {
-    return { k: loc.k, name: loc.name, spend: 0, spendPrev: 0, conv: 0, convPrev: 0,
+    return { k: loc.k, name: loc.name, spend: 0, spendPrev: 0, conv: 0, convPrev: 0, convMsg: 0, convForm: 0, formOk: false,
       days: p.dates.map(() => 0), leadsDays: p.dates.map(() => 0), hour: new Array(24).fill(0) };
   }
-  const r = await postWithRetry(`${API}/integrations/${loc.integration}/widgets/value`, {
+  const call = (widgets) => postWithRetry(`${API}/integrations/${loc.integration}/widgets/value`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd, widgets: WIDGETS })
-  }, loc.name);
-  const data = (await r.json()).data || {};
+    body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd, widgets })
+  }, loc.name).then((r) => r.json()).then((j) => j.data || {});
+  let data, formOk = true;
+  try { data = await call(WIDGETS.concat(FORM_WIDGETS)); }
+  catch (e) { formOk = false; data = await call(WIDGETS); } // form metric rejected → keep the rest working
   const num = (v) => (v == null || v === "" ? 0 : Number(v));
 
   const byDate = data.by_date || {};
@@ -107,6 +117,12 @@ async function fetchLocation(loc, p, key) {
   const leadMap = {};
   (leadsByDate.labels || []).forEach((lab, i) => { leadMap[lab] = num(((leadsByDate.values || [])[0] || {}).data?.[i]); });
 
+  const formByDate = data.form_leads_by_date || {};
+  const formMap = {};
+  (formByDate.labels || []).forEach((lab, i) => { formMap[lab] = num(((formByDate.values || [])[0] || {}).data?.[i]); });
+  const msg = num(data.leads?.values), msgPrev = num(data.leads?.comparison?.values);
+  const form = num(data.form_leads?.values), formPrev = num(data.form_leads?.comparison?.values);
+
   const byHour = data.by_hour || {};
   const impressions = ((byHour.values || []).find((s) => s.name === "impressions") || {}).data || [];
   const hour = (byHour.labels || []).length === 24 ? impressions.map(num) : new Array(24).fill(1);
@@ -116,10 +132,11 @@ async function fetchLocation(loc, p, key) {
     name: loc.name,
     spend: num(data.spend?.values),
     spendPrev: num(data.spend?.comparison?.values),
-    conv: num(data.leads?.values),
-    convPrev: num(data.leads?.comparison?.values),
+    conv: msg + form,
+    convPrev: msgPrev + formPrev,
+    convMsg: msg, convForm: form, formOk,
     days: p.dates.map((d) => dayMap[d] || 0),
-    leadsDays: p.dates.map((d) => leadMap[d] || 0),
+    leadsDays: p.dates.map((d) => (leadMap[d] || 0) + (formMap[d] || 0)),
     hour
   };
 }
