@@ -234,6 +234,20 @@
   .spin{width:18px;height:18px;border-radius:50%;border:2px solid var(--line2);border-top-color:var(--accent);animation:spin .8s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   body.viewing{overflow:hidden}
+  /* ---------- Platform menu (Meta / Google) ---------- */
+  .pmenu{position:fixed;z-index:45;min-width:220px;background:#fff;border:1px solid var(--line2);border-radius:14px;box-shadow:0 20px 50px rgba(24,24,27,.16);padding:6px;animation:popIn .14s ease-out}
+  .pmenu[hidden]{display:none}
+  .pmenu-t{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:8px 10px 6px}
+  .pmenu button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid transparent;background:transparent;border-radius:10px;padding:10px;font:inherit;font-size:14px;font-weight:600;color:var(--strong);cursor:pointer}
+  .pmenu button:hover:not(:disabled),.pmenu button:focus-visible{background:var(--accent-soft);border-color:var(--accent-line);outline:0}
+  .pmenu button:disabled{opacity:.45;cursor:default}
+  .pmenu button small{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--muted)}
+  .pdot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+  .pdot.m{background:#1877f2}.pdot.g{background:#34a853}
+  .vplat{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden;background:var(--surface2)}
+  .vplat button{font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:7px 12px;cursor:pointer}
+  .vplat button[aria-pressed="true"]{background:var(--accent);color:#111}
+  .vplat button:disabled{opacity:.4;cursor:default}
 
   @media (max-width:1000px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:minmax(0,1fr)}.live-body{grid-template-columns:minmax(0,1fr)}.side{border-left:0;border-top:1px solid var(--line)}}
   @media (max-width:600px){.wrap{padding:18px 16px 32px}h1{font-size:19px}.kpis{gap:10px}.kpi{padding:14px}.kpi .v{font-size:22px}.status .sep,.status .nxt{display:none}.loc-s{display:none}.vt small,.vswitch{display:none}.map-legend{display:none}.period{display:none}.logo{width:36px;height:36px}}
@@ -463,11 +477,19 @@
   </div>
 </div>
 
+<!-- Platform menu: choose Meta or Google report for a location -->
+<div class="pmenu" id="pmenu" role="menu" hidden>
+  <div class="pmenu-t" id="pmenu-t"></div>
+  <button type="button" role="menuitem" data-plat="meta"><span class="pdot m"></span>View Meta Ads</button>
+  <button type="button" role="menuitem" data-plat="google"><span class="pdot g"></span>View Google Ads<small id="pmenu-gs"></small></button>
+</div>
+
 <!-- Report viewer (keeps the user inside the CRM) -->
 <div class="viewer" id="viewer" aria-hidden="true">
   <div class="vbar">
     <button class="vback" type="button" id="v-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>Overview</button>
     <div class="vt"><span class="av" id="v-av"></span><b id="v-name"></b><small id="v-state"></small></div>
+    <div class="vplat" role="group" aria-label="Platform"><button type="button" data-plat="meta">Meta</button><button type="button" data-plat="google">Google</button></div>
     <select class="vswitch" id="v-switch" aria-label="Switch location"></select>
   </div>
   <div class="vload" id="v-load"><span class="spin"></span>Loading report…</div>
@@ -475,10 +497,10 @@
 </div>
 
 <script>
-  /* ===== EDIT HERE: name | state (MA, CT…) | Reportei public link | key used by the data API ===== */
+  /* ===== EDIT HERE: name | state (MA, CT…) | Reportei public link (Meta) | google = Reportei Google Ads link | key used by the data API ===== */
   var LOCATIONS = [
     { key: "Marlborough", nome: "Marlborough", local: "MA", acct: "1328", link: "https://app.reportei.com/dashboard/d7vNLcNWOUJGO5Pjbmfzm3r62F2fUTOo" },
-    { key: "Medford",     nome: "Medford",     local: "MA", acct: "2727", link: "https://app.reportei.com/dashboard/p3Vfhsntv2q4qactebgFDs1sZikDXSz6" },
+    { key: "Medford",     nome: "Medford",     local: "MA", acct: "2727", link: "https://app.reportei.com/dashboard/p3Vfhsntv2q4qactebgFDs1sZikDXSz6", google: "https://app.reportei.com/dashboard/DfZ6MaYhpcFyS798MhQ0wa8RHCRcA1wg" },
     { key: "Mitsubishi",  nome: "Mitsubishi",  local: "MA", acct: "3720", link: "https://app.reportei.com/dashboard/zFkprEcypXq67JuN7jjQdECinXOpTRTo", city: "Framingham" },
     { key: "DougCar",     nome: "Doug Car",    local: "MA", acct: "3128", link: "https://app.reportei.com/dashboard/U7nUsa3n37aeS4u6grftnmsdg5Q9S4OC" },
     { key: "Nissan",      nome: "Nissan",      local: "MA", city: "Chelmsford", acct: "0431", link: "https://app.reportei.com/dashboard/lIYhRh7KdUUqYgsmQBnNzNEE3qW0C8yx" },
@@ -703,8 +725,38 @@
       S.sort = { k: k, dir: S.sort.k === k ? -S.sort.dir : (k === "name" || k === "cpl" ? 1 : -1) };
       renderTable();
     });
-    $("rows").addEventListener("click", function (e) { var tr = e.target.closest("tr[data-k]"); if (tr) openReport(tr.getAttribute("data-k")); });
-    $("rows").addEventListener("keydown", function (e) { if (e.key === "Enter") { var tr = e.target.closest("tr[data-k]"); if (tr) openReport(tr.getAttribute("data-k")); } });
+    $("rows").addEventListener("click", function (e) { var tr = e.target.closest("tr[data-k]"); if (tr) openPlatMenu(tr, e); });
+    $("rows").addEventListener("keydown", function (e) { if (e.key === "Enter") { var tr = e.target.closest("tr[data-k]"); if (tr) openPlatMenu(tr, null); } });
+
+    /* ---- Platform menu (row click → Meta or Google) ---- */
+    var PM = { k: null, from: null }, pm = $("pmenu");
+    function openPlatMenu(tr, ev) {
+      var l = locByKey(tr.getAttribute("data-k")); if (!l) return;
+      PM.k = l.key; PM.from = tr;
+      $("pmenu-t").textContent = l.nome;
+      pm.querySelector('[data-plat="meta"]').disabled = !l.link;
+      pm.querySelector('[data-plat="google"]').disabled = !l.google;
+      $("pmenu-gs").textContent = l.google ? "" : "Soon";
+      pm.hidden = false;
+      var r = tr.getBoundingClientRect(), w = pm.offsetWidth, h = pm.offsetHeight;
+      var x = ev && ev.clientX ? ev.clientX - w / 2 : r.right - w - 16;
+      var y = r.bottom - 6;
+      if (y + h > innerHeight - 8) y = r.top - h + 6;
+      pm.style.left = Math.max(8, Math.min(x, innerWidth - w - 8)) + "px";
+      pm.style.top = Math.max(8, y) + "px";
+      var first = pm.querySelector("button:not(:disabled)"); if (first) setTimeout(function () { first.focus(); }, 20);
+    }
+    function closePlatMenu(focusRow) { if (pm.hidden) return; pm.hidden = true; if (focusRow && PM.from) PM.from.focus(); }
+    pm.addEventListener("click", function (e) { var b = e.target.closest("button[data-plat]"); if (!b || b.disabled) return; var k = PM.k; closePlatMenu(false); openReport(k, b.getAttribute("data-plat")); });
+    pm.addEventListener("keydown", function (e) {
+      var bs = [].slice.call(pm.querySelectorAll("button:not(:disabled)")), i = bs.indexOf(document.activeElement);
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); if (bs.length) bs[(i + (e.key === "ArrowDown" ? 1 : -1) + bs.length) % bs.length].focus(); }
+      if (e.key === "Tab") { e.preventDefault(); closePlatMenu(true); }
+    });
+    document.addEventListener("mousedown", function (e) { if (!pm.hidden && !e.target.closest("#pmenu")) closePlatMenu(false); });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !pm.hidden) { e.stopPropagation(); closePlatMenu(true); } }, true);
+    window.addEventListener("scroll", function () { closePlatMenu(false); }, true);
+    window.addEventListener("resize", function () { closePlatMenu(false); });
 
     /* ================= Chart ================= */
     function renderChart() {
@@ -1074,12 +1126,17 @@
     });
 
     /* ================= Report viewer (in-page, keeps the CRM around it) ================= */
-    function openReport(k) { var l = locByKey(k); if (!l || !l.link) return; location.hash = "r=" + encodeURIComponent(k); }
+    function platLink(l, p) { return p === "google" ? l.google : l.link; }
+    function hashFor(k, p) { return "#r=" + encodeURIComponent(k) + (p === "google" ? "&p=google" : ""); }
+    function openReport(k, p) { var l = locByKey(k); if (!l || !platLink(l, p)) return; location.hash = hashFor(k, p); }
     function closeReport() { history.replaceState(null, "", location.pathname + location.search); route(); }
     function route() {
-      var m = /^#r=(.+)$/.exec(location.hash), l = m && locByKey(decodeURIComponent(m[1])), v = $("viewer"), fr = $("v-frame");
-      if (l && l.link) {
-        if (fr.getAttribute("src") !== l.link) { $("v-load").style.display = ""; fr.style.background = "transparent"; fr.setAttribute("src", l.link); }
+      var m = /^#r=([^&]+)(?:&p=(\w+))?$/.exec(location.hash), l = m && locByKey(decodeURIComponent(m[1])), p = m && m[2] === "google" ? "google" : "meta", v = $("viewer"), fr = $("v-frame");
+      var url = l && platLink(l, p);
+      if (url) {
+        if (fr.getAttribute("src") !== url) { $("v-load").style.display = ""; fr.style.background = "transparent"; fr.setAttribute("src", url); }
+        S.plat = p;
+        [].forEach.call(document.querySelectorAll(".vplat button"), function (b) { var bp = b.getAttribute("data-plat"); b.setAttribute("aria-pressed", bp === p ? "true" : "false"); b.disabled = !platLink(l, bp); });
         $("v-av").textContent = initials(l.nome); $("v-name").innerHTML = esc(l.nome) + acctTag(l); $("v-state").textContent = stateName(l);
         $("v-switch").value = l.key;
         v.classList.add("open"); v.setAttribute("aria-hidden", "false"); document.body.classList.add("viewing");
@@ -1089,7 +1146,8 @@
       }
     }
     $("v-switch").innerHTML = LOCATIONS.filter(function (l) { return l.link; }).map(function (l) { return '<option value="' + l.key + '">' + esc(l.nome) + "</option>"; }).join("");
-    $("v-switch").addEventListener("change", function () { history.replaceState(null, "", "#r=" + encodeURIComponent(this.value)); route(); });
+    $("v-switch").addEventListener("change", function () { var l = locByKey(this.value), p = S.plat === "google" && l && l.google ? "google" : "meta"; history.replaceState(null, "", hashFor(this.value, p)); route(); });
+    document.querySelector(".vplat").addEventListener("click", function (e) { var b = e.target.closest("button[data-plat]"); if (!b || b.disabled) return; history.replaceState(null, "", hashFor($("v-switch").value, b.getAttribute("data-plat"))); route(); });
     $("v-back").addEventListener("click", closeReport);
     $("v-frame").addEventListener("load", function () { if (this.getAttribute("src")) { $("v-load").style.display = "none"; this.style.background = "#fff"; } });
     window.addEventListener("hashchange", route);
