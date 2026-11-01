@@ -431,7 +431,7 @@
     var o = own[accKey(pl, a)]; return !o || o.owner === pid;
   }
   var ownCache = { k: "", v: null };
-  function ownersSel() { var k = S.sel.join(","); if (ownCache.k !== k || !ownCache.v) ownCache = { k: k, v: owners(S.sel) }; return ownCache.v; }
+  function ownersSel() { var k = S.sel.join(",") + "|" + (S.clients ? S.clients.length : 0); if (ownCache.k !== k || !ownCache.v) ownCache = { k: k, v: owners(S.sel) }; return ownCache.v; }
   function skipList(pid) {
     var c = clientById(pid), out = [], own = ownersSel(); if (!c) return out;
     eachAcc(c, function (pl, a) { if (!isIn(pid, pl, a, S.sel, S.acc, own)) out.push(a.id); });
