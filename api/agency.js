@@ -6,7 +6,7 @@
 //   GET /api/agency?project=ID[&start=YYYY-MM-DD&end=YYYY-MM-DD&prevStart=…&prevEnd=…]
 //       → that client's numbers for the period (month-to-date when no dates are given):
 //         Meta Ads spend + leads (WhatsApp/Messenger conversations + instant-form leads), per day and per account,
-//         Google Ads spend per account. Each period is compared with the previous one.
+//         Google Ads spend per account. Optional &skip=id,id leaves those accounts out (counted under another client). Each period is compared with the previous one.
 //
 // The Reportei key lives ONLY in the Vercel env var REPORTEI_API_KEY.
 // Optional extra lock: set AGENCY_CODE on Vercel → this API also asks for that code (header x-agency-code),
@@ -188,8 +188,10 @@ async function googleAccount(acc, p, key) {
   return { platform: "google", id: acc.id, name: acc.name, spend: r2(num(d.values)), spendPrev: r2(num(d.comparison && d.comparison.values)) };
 }
 
-async function clientData(pid, p, key) {
-  const c = await projectAccounts(pid, key);
+async function clientData(pid, p, key, skip) {
+  const c0 = await projectAccounts(pid, key);
+  // skip = ad accounts the dashboard counts under another client (same account connected in several projects)
+  const c = { name: c0.name, meta: c0.meta.filter((a) => !skip.has(a.id)), google: c0.google.filter((a) => !skip.has(a.id)) };
   const accounts = [], errors = [];
   for (const a of c.meta) {
     try { accounts.push(await metaAccount(a, p, key)); }
@@ -236,7 +238,8 @@ module.exports = async (req, res) => {
     }
     const pid = Number(q.project);
     if (!pid) { res.status(400).json({ error: "project is required" }); return; }
-    const data = await clientData(pid, periodsFrom(q), key);
+    const skip = new Set(String(q.skip || "").split(",").map(Number).filter(Boolean));
+    const data = await clientData(pid, periodsFrom(q), key, skip);
     res.setHeader("Cache-Control", "private, max-age=120");
     res.status(200).json(data);
   } catch (e) {
