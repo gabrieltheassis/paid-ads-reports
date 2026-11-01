@@ -161,6 +161,14 @@
   .mrow .nm{font-weight:600;color:var(--strong)}
   .mrow .ac{font-size:12px;color:var(--muted)}
   .mrow .bg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .mitem{border-bottom:1px solid var(--line)}
+  .mitem:last-child{border-bottom:0}
+  .accs{margin:-4px 12px 10px 41px;font-size:12.5px}
+  .accs summary{cursor:pointer;color:var(--muted);padding:2px 0;list-style-position:outside}
+  .accs .shr{color:var(--warn);font-weight:600}
+  .arow{display:grid;grid-template-columns:auto auto 1fr;gap:8px;align-items:center;padding:6px 0;cursor:pointer}
+  .arow input{width:15px;height:15px;accent-color:var(--accent2)}
+  .arow small{display:block;color:var(--muted)}
   .mrow .bg input{width:110px;padding:6px 8px;font-size:13px}
   .modal-f{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 22px;border-top:1px solid var(--line)}
   .msg{padding:24px;text-align:center;color:var(--muted)}
@@ -287,7 +295,7 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
   var TZ = "America/New_York";
-  var LS = { sel: "agency.sel", bud: "agency.budgets", code: "agency.code", per: "agency.period" };
+  var LS = { acc: "agency.accounts", sel: "agency.sel", bud: "agency.budgets", code: "agency.code", per: "agency.period" };
   function lsGet(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 
@@ -295,6 +303,7 @@
     clients: null,          // all Reportei projects
     sel: lsGet(LS.sel, []), // selected project ids, in tab order
     budgets: lsGet(LS.bud, {}),
+    acc: lsGet(LS.acc, {}),   // manual account choices: "clientId:accountId" -> true/false
     code: lsGet(LS.code, ""),
     range: lsGet(LS.per, { preset: "mtd" }),
     view: "all",
@@ -373,13 +382,13 @@
   var queue = [], running = 0;
   function loadAll(force) {
     var k = periodKey(), r = resolve(S.range);
-    if (force) S.sel.forEach(function (id) { delete S.data[k + "|" + id]; });
+    if (force) S.sel.forEach(function (id) { delete S.data[dataKey(id)]; });
     S.sel.forEach(function (id) {
-      var key = k + "|" + id;
+      var key = dataKey(id), sk = skipList(id);
       if (S.data[key] || S.loading[key]) return;
       S.loading[key] = true;
       queue.push(function () {
-        return api("project=" + id + qs(r)).then(function (d) { S.data[key] = d; }, function (e) {
+        return api("project=" + id + qs(r) + (sk.length ? "&skip=" + sk.join(",") : "")).then(function (d) { S.data[key] = d; }, function (e) {
           if (e.lock) { needCode(S.code ? "Wrong code, try again." : ""); }
           S.data[key] = { error: e.message || String(e) };
         }).then(function () { delete S.loading[key]; render(); });
@@ -393,7 +402,41 @@
       queue.shift()().then(function () { running--; pump(); });
     }
   }
-  function get(id) { return S.data[periodKey() + "|" + id]; }
+  function dataKey(id) { return periodKey() + "|" + id + "|" + skipList(id).join(","); }
+  function get(id) { return S.data[dataKey(id)]; }
+
+  /* ---------- one ad account = one client ----------
+     The same Meta/Google account is often connected in several Reportei projects. Each account is counted
+     under ONE selected client only, so totals and budgets are not doubled. Default owner = the selected client
+     whose name best matches the account name (ties → the client with fewer accounts). Can be changed in Clients. */
+  var STOP = { icon: 1, motors: 1, motor: 1, group: 1, of: 1, the: 1, usa: 1, ma: 1, ct: 1, page: 1, inc: 1, llc: 1 };
+  function accKey(platform, a) { return platform + ":" + String(a.name).toLowerCase().replace(/\s+/g, " ").trim(); }
+  function words(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ").filter(function (w) { return w && !STOP[w] && !/^\d+$/.test(w); }); }
+  function eachAcc(c, fn) { c.meta.forEach(function (a) { fn("meta", a); }); c.google.forEach(function (a) { fn("google", a); }); }
+  function owners(sel) {
+    var by = {};
+    sel.forEach(function (pid) { var c = clientById(pid); if (c) eachAcc(c, function (pl, a) { (by[accKey(pl, a)] = by[accKey(pl, a)] || []).push(c); }); });
+    var out = {};
+    Object.keys(by).forEach(function (k) {
+      var an = words(k.slice(k.indexOf(":") + 1));
+      var best = by[k].map(function (c) { var cw = words(c.name), sc = cw.filter(function (w) { return an.indexOf(w) >= 0; }).length; return { c: c, sc: sc, n: c.meta.length + c.google.length }; })
+        .sort(function (x, y) { return y.sc - x.sc || x.n - y.n || x.c.id - y.c.id; });
+      out[k] = { owner: best[0].c.id, all: by[k].map(function (c) { return c.id; }) };
+    });
+    return out;
+  }
+  function isIn(pid, pl, a, sel, acc, own) {
+    var m = acc[pid + ":" + a.id];
+    if (m === true || m === false) return m;
+    var o = own[accKey(pl, a)]; return !o || o.owner === pid;
+  }
+  var ownCache = { k: "", v: null };
+  function ownersSel() { var k = S.sel.join(","); if (ownCache.k !== k || !ownCache.v) ownCache = { k: k, v: owners(S.sel) }; return ownCache.v; }
+  function skipList(pid) {
+    var c = clientById(pid), out = [], own = ownersSel(); if (!c) return out;
+    eachAcc(c, function (pl, a) { if (!isIn(pid, pl, a, S.sel, S.acc, own)) out.push(a.id); });
+    return out.sort(function (a, b) { return a - b; });
+  }
 
   /* ---------- derived ---------- */
   function row(id) {
@@ -477,8 +520,8 @@
     var body = sorted.map(function (r) {
       if (!r.ok) return '<tr data-v="' + r.id + '"><td class="cl">' + esc(r.name) + '</td><td colspan="7">' + (r.err ? '<span class="down">Couldn\'t load: ' + esc(r.err).slice(0, 120) + "</span>" : '<span class="skel"></span>') + "</td></tr>";
       var pc = pacing(r);
-      return '<tr data-v="' + r.id + '"><td class="cl">' + esc(r.name) + "<small>" + r.c.meta.length + " Meta · " + r.c.google.length + " Google</small></td>" +
-        '<td class="r num">' + usd(r.meta) + '</td><td class="r num">' + (r.c.google.length ? usd(r.google) : '<span style="color:var(--faint)">—</span>') + "</td>" +
+      return '<tr data-v="' + r.id + '"><td class="cl">' + esc(r.name) + "<small>" + r.d.counts.meta + " Meta · " + r.d.counts.google + " Google</small></td>" +
+        '<td class="r num">' + usd(r.meta) + '</td><td class="r num">' + (r.d.counts.google ? usd(r.google) : '<span style="color:var(--faint)">—</span>') + "</td>" +
         '<td class="r num"><b>' + usd(r.total) + "</b>" + chg(r.total, r.totalPrev) + "</td>" +
         '<td class="r num">' + int(r.leads) + chg(r.leads, r.leadsPrev) + "</td>" +
         '<td class="r num">' + (r.cpl != null ? usd2.format(r.cpl) : "—") + chg(r.cpl || 0, r.cplPrev, true) + "</td>" +
@@ -562,7 +605,7 @@
     var h = '<section class="grid kpis k5">' +
       kpi("Total ad spend", usd(r.total), (chg(r.total, r.totalPrev) || "—") + " " + cmpLabel()) +
       kpi("Meta Ads", usd(r.meta), (chg(r.meta, d.metaSpendPrev) || "—") + " " + d.counts.meta + " account" + (d.counts.meta === 1 ? "" : "s"), "var(--meta)") +
-      kpi("Google Ads", r.c.google.length ? usd(r.google) : "—", r.c.google.length ? (chg(r.google, d.googleSpendPrev) || "—") + " " + d.counts.google + " account" + (d.counts.google === 1 ? "" : "s") : "Not connected", "var(--google)") +
+      kpi("Google Ads", d.counts.google ? usd(r.google) : "—", d.counts.google ? (chg(r.google, d.googleSpendPrev) || "—") + " " + d.counts.google + " account" + (d.counts.google === 1 ? "" : "s") : "Not connected", "var(--google)") +
       kpi("Leads", int(r.leads), (chg(r.leads, r.leadsPrev) || "—") + " " + int(d.msg) + " chats · " + int(d.form) + " forms") +
       kpi("Cost per lead", r.cpl != null ? usd2.format(r.cpl) : "—", (chg(r.cpl || 0, r.cplPrev, true) || "—") + " Meta spend ÷ leads") +
       "</section>";
@@ -637,19 +680,33 @@
   // client manager
   var draft = null;
   function openMng() {
-    draft = { sel: S.sel.slice(), bud: Object.assign({}, S.budgets) };
+    draft = { sel: S.sel.slice(), bud: Object.assign({}, S.budgets), acc: Object.assign({}, S.acc) };
     $("mng").hidden = false; $("mng-q").value = "";
     if (!S.clients) { $("mng-list").innerHTML = '<div class="msg">Loading clients…</div>'; loadClients().then(drawMng, function (e) { if (e.lock) { closeMng(); needCode(); } else $("mng-list").innerHTML = '<div class="msg down">Couldn\'t load clients: ' + esc(e.message) + "</div>"; }); }
     else drawMng();
     setTimeout(function () { $("mng-q").focus(); }, 30);
   }
   function closeMng() { $("mng").hidden = true; }
+  function accList(c, own) {
+    var n = 0, shared = 0, h = "";
+    eachAcc(c, function (pl, a) {
+      var inc = isIn(c.id, pl, a, draft.sel, draft.acc, own); if (inc) n++;
+      var o = own[accKey(pl, a)], others = o ? o.all.filter(function (x) { return x !== c.id; }) : [];
+      if (others.length) shared++;
+      var note = others.length ? (inc ? "also in " : "counted in ") + others.map(function (x) { return esc((clientById(x) || {}).name); }).join(", ") : "";
+      if (!inc && o && o.owner !== c.id && draft.acc[c.id + ":" + a.id] === undefined) note = "counted in " + esc((clientById(o.owner) || {}).name);
+      h += '<label class="arow"><input type="checkbox" data-acc="' + c.id + ":" + a.id + '"' + (inc ? " checked" : "") + '><span class="pill ' + pl + '">' + (pl === "meta" ? "Meta" : "Google") + "</span><span>" + esc(a.name) + (note ? '<small>' + note + "</small>" : "") + "</span></label>";
+    });
+    var total = c.meta.length + c.google.length;
+    return '<details class="accs"' + (shared ? " open" : "") + '><summary>' + n + " of " + total + " ad accounts counted here" + (shared ? ' · <span class="shr">' + shared + " shared with other clients</span>" : "") + "</summary>" + h + "</details>";
+  }
   function drawMng() {
     var q = $("mng-q").value.trim().toLowerCase();
     var list = (S.clients || []).filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) >= 0; });
+    var own = owners(draft.sel);
     $("mng-list").innerHTML = list.length ? list.map(function (c) {
       var on = draft.sel.indexOf(c.id) >= 0, ads = c.meta.length + c.google.length;
-      return '<label class="mrow"><input type="checkbox" data-id="' + c.id + '"' + (on ? " checked" : "") + '><span><span class="nm">' + esc(c.name) + '</span><br><span class="ac">' + (ads ? c.meta.length + " Meta Ads · " + c.google.length + " Google Ads" : "No ad accounts connected") + '</span></span><span class="bg">Monthly budget $<input type="number" min="0" step="100" inputmode="decimal" data-bud="' + c.id + '" value="' + (draft.bud[c.id] || "") + '" placeholder="optional"></span></label>';
+      return '<div class="mitem"><label class="mrow"><input type="checkbox" data-id="' + c.id + '"' + (on ? " checked" : "") + '><span><span class="nm">' + esc(c.name) + '</span><br><span class="ac">' + (ads ? c.meta.length + " Meta Ads · " + c.google.length + " Google Ads" : "No ad accounts connected") + '</span></span><span class="bg">Monthly budget $<input type="number" min="0" step="100" inputmode="decimal" data-bud="' + c.id + '" value="' + (draft.bud[c.id] || "") + '" placeholder="optional"></span></label>' + (on && ads ? accList(c, own) : "") + "</div>";
     }).join("") : '<div class="msg">' + (S.clients && S.clients.length ? "No client matches your search." : "No projects found in Reportei.") + "</div>";
     $("mng-cnt").textContent = draft.sel.length + " selected";
   }
@@ -658,11 +715,14 @@
   $("mng").addEventListener("mousedown", function (e) { if (e.target === $("mng")) closeMng(); });
   $("mng-q").addEventListener("input", drawMng);
   $("mng-list").addEventListener("change", function (e) {
+    var ak = e.target.dataset.acc;
+    if (ak) { draft.acc[ak] = e.target.checked; drawMngKeep(); return; }
     var id = +e.target.dataset.id; if (!id) return;
     var i = draft.sel.indexOf(id);
     if (e.target.checked && i < 0) draft.sel.push(id); if (!e.target.checked && i >= 0) draft.sel.splice(i, 1);
-    $("mng-cnt").textContent = draft.sel.length + " selected";
+    drawMngKeep();
   });
+  function drawMngKeep() { var st = $("mng-list").scrollTop; drawMng(); $("mng-list").scrollTop = st; }
   $("mng-list").addEventListener("input", function (e) { var id = e.target.dataset.bud; if (id) { var v = Number(e.target.value); if (v > 0) draft.bud[id] = v; else delete draft.bud[id]; } });
   $("mng-all").addEventListener("click", function () {
     var q = $("mng-q").value.trim().toLowerCase();
@@ -672,7 +732,7 @@
   $("mng-save").addEventListener("click", function () {
     var names = {}; (S.clients || []).forEach(function (c) { names[c.id] = c.name; });
     S.sel = draft.sel.slice().sort(function (a, b) { return String(names[a]).localeCompare(String(names[b])); });
-    S.budgets = draft.bud; lsSet(LS.sel, S.sel); lsSet(LS.bud, S.budgets); closeMng(); loadAll();
+    S.budgets = draft.bud; S.acc = draft.acc; lsSet(LS.sel, S.sel); lsSet(LS.bud, S.budgets); lsSet(LS.acc, S.acc); closeMng(); loadAll();
   });
 
   function boot() {
