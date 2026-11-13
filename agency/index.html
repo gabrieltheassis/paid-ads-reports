@@ -131,6 +131,14 @@
   .alerts b{color:var(--strong)}
   .alerts .none{color:var(--muted)}
 
+  /* panel budgets modal */
+  .pbf{display:grid;gap:10px;margin:14px 0 6px}
+  .pbg{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+  .pbg small{font-weight:600;text-transform:none;letter-spacing:0;color:var(--faint);margin-left:4px}
+  .pbf label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+  .pbf label span{display:inline-flex;align-items:center;gap:4px;color:var(--muted)}
+  .pbf input{width:140px;text-align:right;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font:600 14px Inter,sans-serif;color:var(--strong)}
+  .pbt{font-size:12.5px;color:var(--muted);text-align:right}
   /* budget */
   .bud{padding:16px 20px 20px}
   .bud-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
@@ -237,6 +245,10 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clients<span class="sub" id="mng-n">0</span>
       </button>
+      <button type="button" class="btn" id="pb-btn" title="Monthly budgets shown on the CRM panels">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Budgets
+      </button>
       <button type="button" class="btn" id="ref-btn" title="Reload the numbers">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
         Refresh
@@ -277,6 +289,29 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- panel budgets (saved on the server, shown on the CRM panels) -->
+<div class="ov" id="pb" hidden>
+  <form class="modal" id="pb-f" role="dialog" aria-modal="true" aria-labelledby="pb-h" style="max-width:440px">
+    <div class="modal-h" style="border:0">
+      <h2 id="pb-h">Panel budgets</h2>
+      <p>Monthly ad budget shown on each CRM panel. Saving updates the panels for everyone.</p>
+      <div class="pbf">
+        <div class="pbg">Main panel · Icon Motors <small>/</small></div>
+        <label>Meta Ads<span>$<input type="number" id="pb-mm" min="0" step="100" inputmode="decimal" required></span></label>
+        <label>Google Ads<span>$<input type="number" id="pb-mg" min="0" step="100" inputmode="decimal" required></span></label>
+        <div class="pbt" id="pb-mt"></div>
+        <div class="pbg">AN – Icon Motors Group <small>/an</small></div>
+        <label>Meta Ads<span>$<input type="number" id="pb-am" min="0" step="100" inputmode="decimal" required></span></label>
+      </div>
+      <p class="err" id="pb-e" role="alert"></p>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn" id="pb-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="pb-save">Save</button>
+      </div>
+    </div>
+  </form>
 </div>
 
 <!-- agency code (only when AGENCY_CODE is set on Vercel) -->
@@ -372,6 +407,46 @@
   }
   $("lock-f").addEventListener("submit", function (e) {
     e.preventDefault(); S.code = $("lock-c").value.trim(); lsSet(LS.code, S.code); $("lock").hidden = true; S.data = {}; boot();
+  });
+
+  /* ---------- Budgets saved on the server (shared with the CRM panels) ---------- */
+  S.server = null;
+  function budgetsApi(body) {
+    var h = { "Content-Type": "application/json" }; if (S.code) h["x-agency-code"] = S.code;
+    return fetch("../api/budgets", body ? { method: "POST", headers: h, body: JSON.stringify(body), cache: "no-store", credentials: "same-origin" } : { headers: h, cache: "no-store", credentials: "same-origin" })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ("HTTP " + r.status)); e.code = j.error; throw e; } return j; }); });
+  }
+  function budgetErr(e) {
+    return e.code === "storage_not_connected" ? "The budgets database isn't connected on Vercel yet." :
+      e.code === "agency_code_required" ? "Agency code required — reload and enter it." : "Couldn't save: " + e.message;
+  }
+  function loadBudgets() {
+    return budgetsApi().then(function (b) {
+      S.server = b;
+      if (b.storage) {
+        if (!Object.keys(b.clients || {}).length && Object.keys(S.budgets).length) budgetsApi({ clients: S.budgets }).catch(function () {}); // first run: move this browser's budgets to the server
+        else { S.budgets = b.clients || {}; lsSet(LS.bud, S.budgets); }
+      }
+      render();
+    }, function () {});
+  }
+  function pbTotal() { $("pb-mt").textContent = "Total " + usd0.format((Number($("pb-mm").value) || 0) + (Number($("pb-mg").value) || 0)); }
+  function openPb() {
+    var b = S.server || {}; $("pb-e").textContent = "";
+    $("pb-mm").value = b.main ? b.main.meta : ""; $("pb-mg").value = b.main ? b.main.google : ""; $("pb-am").value = b.an ? b.an.meta : "";
+    pbTotal(); $("pb").hidden = false; setTimeout(function () { $("pb-mm").focus(); }, 30);
+    if (!S.server) loadBudgets().then(function () { if (S.server) openPb(); });
+  }
+  $("pb-btn").addEventListener("click", openPb);
+  $("pb-cancel").addEventListener("click", function () { $("pb").hidden = true; });
+  $("pb").addEventListener("mousedown", function (e) { if (e.target === $("pb")) $("pb").hidden = true; });
+  $("pb-f").addEventListener("input", pbTotal);
+  $("pb-f").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var btn = $("pb-save"); btn.disabled = true; $("pb-e").textContent = "";
+    budgetsApi({ main: { meta: Number($("pb-mm").value) || 0, google: Number($("pb-mg").value) || 0 }, an: { meta: Number($("pb-am").value) || 0 } })
+      .then(function (b) { S.server = b; $("pb").hidden = true; }, function (er) { $("pb-e").textContent = budgetErr(er); })
+      .then(function () { btn.disabled = false; });
   });
 
   function loadClients() {
@@ -733,10 +808,11 @@
     var names = {}; (S.clients || []).forEach(function (c) { names[c.id] = c.name; });
     S.sel = draft.sel.slice().sort(function (a, b) { return String(names[a]).localeCompare(String(names[b])); });
     S.budgets = draft.bud; S.acc = draft.acc; lsSet(LS.sel, S.sel); lsSet(LS.bud, S.budgets); lsSet(LS.acc, S.acc); closeMng(); loadAll();
+    budgetsApi({ clients: S.budgets }).then(function (b) { S.server = b; }, function (er) { if (S.server && S.server.storage) alert(budgetErr(er)); });
   });
 
   function boot() {
-    render();
+    render(); loadBudgets();
     loadClients().then(function () { render(); if (!S.sel.length) openMng(); else loadAll(); }, function (e) {
       if (e.lock) needCode(S.code ? "Wrong code, try again." : "");
       else $("view").innerHTML = '<div class="card grid"><div class="empty"><h2>Couldn\'t reach Reportei</h2><p>' + esc(e.message) + '</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div></div>';
