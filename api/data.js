@@ -23,13 +23,6 @@ const LOCATIONS = [
 // Campaign names are matched ignoring case and extra spaces.
 const EXTRA_LEADS = {};
 const LEAD_METRICS = ["actions:onsite_conversion.messaging_conversation_started_7d", "actions:onsite_conversion.lead_grouped"];
-// Spend by campaign (total and per day), for locations built only from specific campaigns.
-const CAMPAIGN_SPEND_WIDGETS = [
-  { id: "camp_spend", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "bar",
-    metrics: ["spend"], dimensions: [{ field: "campaign_name" }] },
-  { id: "camp_spend_by_date", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "line",
-    metrics: ["spend"], dimensions: [{ field: "date_start" }, { field: "campaign_name" }] }
-];
 const CAMPAIGN_WIDGETS = [
   { id: "camp", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "bar",
     metrics: LEAD_METRICS, dimensions: [{ field: "campaign_name" }] },
@@ -271,30 +264,66 @@ async function fetchExtraLeads(x, p, key) {
 }
 
 // A location made ONLY of specific campaigns of one ad account (spend + leads of those campaigns).
+// Uses Reportei's campaign table widget (fb_ads:insights_by_campaign). Daily numbers: the same table
+// per day (only the days of the period, one call each), so charts and "today" stay right.
+const CAMP_METRICS = ["spend"].concat(LEAD_METRICS);
+const campTable = (id) => ({ id, reference_key: "fb_ads:insights_by_campaign", component: "datatable_v1",
+  metrics: CAMP_METRICS, dimensions: [{ field: "campaign" }] });
+
+// Finds the rows of the wanted campaigns in a datatable answer, whatever its exact shape.
+function campRows(w, wanted, part) {
+  const src = part === "prev" ? (w && w.comparison) || null : w;
+  const rows = [];
+  const walk = (x, depth) => {
+    if (!x || depth > 6) return;
+    if (Array.isArray(x)) { x.forEach((y) => walk(y, depth + 1)); return; }
+    if (typeof x !== "object") return;
+    const name = x.campaign != null ? x.campaign : x.campaign_name != null ? x.campaign_name : x.name;
+    const nm = typeof name === "object" && name ? (name.name || name.value || name.label) : name;
+    if (nm != null && wanted.has(normName(nm)) && CAMP_METRICS.some((m) => m in x || (x.metrics && m in x.metrics))) { rows.push(x); return; }
+    Object.keys(x).forEach((k) => { if (!(part !== "prev" && k === "comparison")) walk(x[k], depth + 1); });
+  };
+  walk(src, 0);
+  return rows;
+}
+function campSum(rows, metrics) {
+  const val = (r, m) => { let v = r.metrics && m in r.metrics ? r.metrics[m] : r[m];
+    if (v && typeof v === "object") v = v.value != null ? v.value : v.values;
+    return Number(v) || 0; };
+  return rows.reduce((t, r) => t + metrics.reduce((a, m) => a + val(r, m), 0), 0);
+}
+
 async function fetchCampaignLocation(loc, p, key, debug) {
   const wanted = new Set(loc.campaignsOnly.map(normName));
-  const call = (widgets) => postWithRetry(`${API}/integrations/${loc.integration}/widgets/value`, {
+  const call = (start, end, cmp, widgets) => postWithRetry(`${API}/integrations/${loc.integration}/widgets/value`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
-    body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd, widgets })
+    body: JSON.stringify(Object.assign({ start, end, widgets }, cmp ? { comparison_start: p.prevStart, comparison_end: p.prevEnd } : {}))
   }, loc.name).then((r) => r.json()).then((j) => j.data || {});
-  const totalsOnly = [CAMPAIGN_SPEND_WIDGETS[0], CAMPAIGN_WIDGETS[0]];
-  let data;
-  try { data = await call(CAMPAIGN_SPEND_WIDGETS.concat(CAMPAIGN_WIDGETS)); }
-  catch (e) { data = await call(totalsOnly); } // date × campaign breakdown rejected → totals only
-  const spendDays = dailyFromChart(data.camp_spend_by_date, wanted, p.dates);
-  const leadsDays = dailyFromChart(data.camp_by_date, wanted, p.dates);
+  const data = await call(p.start, p.end, true, [campTable("camp")]);
+  const rows = campRows(data.camp, wanted), prev = campRows(data.camp, wanted, "prev");
+  // Daily breakdown: one small call per day (skipped for long custom periods).
+  let days = p.dates.map(() => 0), leadsDays = p.dates.map(() => 0), daily = false;
+  if (p.dates.length <= 35) {
+    try {
+      for (let i = 0; i < p.dates.length; i++) {
+        const d = p.dates[i], dd = await call(d, d, false, [campTable("day")]);
+        const r = campRows(dd.day, wanted);
+        days[i] = campSum(r, ["spend"]); leadsDays[i] = campSum(r, LEAD_METRICS);
+      }
+      daily = true;
+    } catch (e) { days = p.dates.map(() => 0); leadsDays = p.dates.map(() => 0); }
+  }
   const out = {
     k: loc.k,
     name: loc.name,
-    spend: sumChart(data.camp_spend, wanted),
-    spendPrev: sumChart(data.camp_spend, wanted, "prev"),
-    conv: sumChart(data.camp, wanted),
-    convPrev: sumChart(data.camp, wanted, "prev"),
-    days: spendDays || p.dates.map(() => 0),
-    leadsDays: leadsDays || p.dates.map(() => 0),
+    spend: Math.round(campSum(rows, ["spend"]) * 100) / 100,
+    spendPrev: Math.round(campSum(prev, ["spend"]) * 100) / 100,
+    conv: campSum(rows, LEAD_METRICS),
+    convPrev: campSum(prev, LEAD_METRICS),
+    days, leadsDays,
     hour: new Array(24).fill(1),
-    campaigns: { account: loc.account, names: loc.campaignsOnly, daily: !!(spendDays && leadsDays) }
+    campaigns: { account: loc.account, names: loc.campaignsOnly, found: rows.length, daily }
   };
   if (debug) out.campaigns.raw = data;
   return out;
@@ -370,4 +399,4 @@ module.exports = async (req, res) => {
 };
 
 // Allow time for one-at-a-time requests and retries.
-module.exports.config = { maxDuration: 30 };
+module.exports.config = { maxDuration: 60 };
