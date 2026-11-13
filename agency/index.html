@@ -149,6 +149,23 @@
   .track i{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--strong)}
   .note{font-size:12.5px;color:var(--muted)}
 
+  /* inline budget editor */
+  .bin{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line2);border-radius:9px;padding:0 9px;background:#fff;width:124px;cursor:text;transition:border-color .15s,box-shadow .15s}
+  .bin:hover{border-color:var(--accent-line)}
+  .bin:focus-within{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(234,179,8,.15)}
+  .bin span{color:var(--muted);font-weight:600}
+  .bin input{border:0!important;box-shadow:none!important;outline:0;padding:7px 0;width:100%;min-width:0;text-align:right;font:600 13.5px Inter,sans-serif;color:var(--strong);background:transparent}
+  .bin input::placeholder{color:var(--faint);font-weight:500}
+  .bin.big{width:170px}.bin.big input{font-size:18px;padding:6px 0}
+  .pace{min-width:170px}
+  .pace .track{margin:2px 0 5px;height:8px}
+  .pace small{font-size:12px;color:var(--muted)}
+  .track span.on{background:var(--good)}.track span.over{background:var(--bad)}.track span.under{background:var(--warn)}
+  .hint{font-size:12.5px;color:var(--muted);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:9px;padding:6px 10px;white-space:nowrap}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--strong);color:#fff;font-size:13px;font-weight:600;padding:10px 16px;border-radius:10px;box-shadow:0 12px 30px rgba(9,9,11,.25);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:80}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.bad{background:var(--bad)}
+
   /* empty + modal */
   .empty{padding:56px 24px;text-align:center}
   .empty h2{font-size:18px;color:var(--strong);margin:0 0 6px}
@@ -203,6 +220,7 @@
     .two{grid-template-columns:1.7fr 1fr}
     tbody tr:hover{background:none}
     .chart svg{height:200px}
+    .bin{border:0;padding:0;width:auto}.bin input{padding:0}.hint,.toast{display:none!important}
     *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
   }
 </style>
@@ -245,9 +263,9 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         Clients<span class="sub" id="mng-n">0</span>
       </button>
-      <button type="button" class="btn" id="pb-btn" title="Monthly budgets shown on the CRM panels">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        Budgets
+      <button type="button" class="btn" id="pb-btn" title="Monthly budgets shown on the CRM panels (Icon Motors and AN)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+        CRM panels
       </button>
       <button type="button" class="btn" id="ref-btn" title="Reload the numbers">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
@@ -273,7 +291,7 @@
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mng-h">
     <div class="modal-h">
       <h2 id="mng-h">Choose clients</h2>
-      <p>Pick which Reportei projects appear on the dashboard. Optional: add a monthly ad budget to track pacing.</p>
+      <p>Pick which Reportei projects appear on the dashboard. Monthly budgets are set right in the client table.</p>
       <div class="modal-tools">
         <input type="text" id="mng-q" placeholder="Search clients…" autocomplete="off">
         <button type="button" class="linkbtn" id="mng-all">Select all</button>
@@ -313,6 +331,8 @@
     </div>
   </form>
 </div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <!-- agency code (only when AGENCY_CODE is set on Vercel) -->
 <div class="ov" id="lock" hidden>
@@ -430,6 +450,42 @@
       render();
     }, function () {});
   }
+  /* ---------- inline client budgets (typed straight into the table) ---------- */
+  function money(n) { return n > 0 ? Math.round(n).toLocaleString("en-US") : ""; }
+  function parseMoney(s) { var n = Number(String(s || "").replace(/[^0-9.]/g, "")); return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0; }
+  function budgetInput(id, big) {
+    return '<label class="bin' + (big ? " big" : "") + '" title="Monthly budget — type and press Enter"><span>$</span><input type="text" inputmode="decimal" autocomplete="off" data-ib="' + id + '" value="' + money(Number(S.budgets[id]) || 0) + '" placeholder="Set budget" aria-label="Monthly budget"></label>';
+  }
+  var toastT;
+  function toast(msg, bad) {
+    var t = $("toast"); t.textContent = msg; t.className = "toast show" + (bad ? " bad" : "");
+    clearTimeout(toastT); toastT = setTimeout(function () { t.className = "toast" + (bad ? " bad" : ""); }, bad ? 4000 : 1800);
+  }
+  function setBudget(id, v) {
+    var cur = Number(S.budgets[id]) || 0;
+    if (v === cur) return;
+    if (v > 0) S.budgets[id] = v; else delete S.budgets[id];
+    lsSet(LS.bud, S.budgets);
+    var name = (clientById(+id) || {}).name || "Client";
+    budgetsApi({ clients: S.budgets }).then(function (b) {
+      S.server = b; toast(v > 0 ? name + " · budget " + usd0.format(v) + " saved" : name + " · budget removed");
+    }, function (er) {
+      toast(er.code === "storage_not_connected" ? "Saved on this browser only — budgets database isn't connected on Vercel." : budgetErr(er), true);
+    });
+  }
+  function focusedBudget() { var a = document.activeElement; return a && a.dataset && a.dataset.ib ? a : null; }
+  document.addEventListener("focusout", function (e) {
+    var id = e.target.dataset && e.target.dataset.ib; if (!id) return;
+    setBudget(id, parseMoney(e.target.value));
+    setTimeout(render, 0); // waits until focus has moved, so tabbing to the next budget keeps working
+  });
+  document.addEventListener("keydown", function (e) {
+    var id = e.target.dataset && e.target.dataset.ib; if (!id) return;
+    if (e.key === "Enter") { e.preventDefault(); e.target.blur(); }
+    if (e.key === "Escape") { e.target.value = money(Number(S.budgets[id]) || 0); e.target.blur(); }
+  });
+  document.addEventListener("focusin", function (e) { if (e.target.dataset && e.target.dataset.ib) setTimeout(function () { try { e.target.select(); } catch (x) {} }, 0); });
+
   function pbTotal() { $("pb-mt").textContent = "Total " + usd0.format((Number($("pb-mm").value) || 0) + (Number($("pb-mg").value) || 0)); }
   function openPb() {
     var b = S.server || {}; $("pb-e").textContent = "";
@@ -516,11 +572,12 @@
   /* ---------- derived ---------- */
   function row(id) {
     var c = clientById(id) || { id: id, name: "Client " + id, meta: [], google: [] }, d = get(id);
-    var o = { id: id, name: c.name, c: c, d: d, ok: d && !d.error, err: d && d.error, loading: !d };
+    var o = { id: id, name: c.name, c: c, d: d, ok: d && !d.error, err: d && d.error, loading: !d, budget: Number(S.budgets[id]) || 0 };
     if (o.ok) {
       o.meta = d.metaSpend; o.google = d.googleSpend; o.total = d.metaSpend + d.googleSpend;
       o.totalPrev = d.metaSpendPrev + d.googleSpendPrev; o.leads = d.leads; o.leadsPrev = d.leadsPrev;
       o.cpl = d.leads ? d.metaSpend / d.leads : null; o.cplPrev = d.leadsPrev ? d.metaSpendPrev / d.leadsPrev : null;
+      var pc = pacing(o); o.used = pc ? pc.used : null;
     }
     return o;
   }
@@ -545,6 +602,7 @@
 
   /* ---------- render ---------- */
   function render() {
+    if (focusedBudget()) { return; } // don't rebuild the table while a budget is being typed; it re-renders on blur
     var r = resolve(S.range);
     $("per-l").textContent = PRESETS[r.preset];
     $("per-d").textContent = fmtRange(r.start, r.end);
@@ -575,9 +633,18 @@
 
   function renderAll() {
     var rows = S.sel.map(row), t = totals(rows), pend = rows.filter(function (r) { return r.loading; }).length;
-    var anyBudget = rows.some(function (r) { return pacing(r); });
     var mShare = t.total ? t.meta / t.total * 100 : 0;
-    var h = '<section class="grid kpis">' +
+    var isMtd = resolve(S.range).preset === "mtd", mi = monthInfo();
+    var bRows = rows.filter(function (r) { return r.budget > 0; });
+    var bSum = bRows.reduce(function (s, r) { return s + r.budget; }, 0);
+    var bSpent = bRows.reduce(function (s, r) { return s + (r.ok ? r.total : 0); }, 0);
+    var bUsed = bSum ? bSpent / bSum : 0, bTarget = mi.day / mi.dim;
+    var bSt = bUsed > bTarget * 1.1 ? "over" : bUsed < bTarget * 0.9 ? "under" : "on";
+    var budCard = '<div class="card kpi"><div class="l">' + mi.name + ' budget</div><div class="v num">' + (bSum ? usd0.format(bSum) : "—") + '</div>' +
+      (!bSum ? '<div class="d">Type each client\'s budget in the table below</div>' :
+        isMtd ? '<div class="track" style="margin:8px 0 4px;height:6px"><span class="' + bSt + '" style="width:' + Math.min(100, bUsed * 100) + '%"></span><i style="left:' + Math.min(100, bTarget * 100) + '%"></i></div><div class="d">' + Math.round(bUsed * 100) + "% used · " + usd0.format(bSum - bSpent) + " left · " + bRows.length + " client" + (bRows.length === 1 ? "" : "s") + "</div>" :
+        '<div class="d">' + bRows.length + " client" + (bRows.length === 1 ? "" : "s") + " · pacing shows on This month</div>") + "</div>";
+    var h = '<section class="grid kpis k5">' + budCard +
       kpi("Total ad spend", usd(t.total), (chg(t.total, t.totalPrev) || "—") + " " + cmpLabel()) +
       kpi("Leads", int(t.leads), (chg(t.leads, t.leadsPrev) || "—") + " " + cmpLabel()) +
       kpi("Cost per lead", t.cpl != null ? usd2.format(t.cpl) : "—", (chg(t.cpl || 0, t.cplPrev, true) || "—") + " Meta spend ÷ leads") +
@@ -590,22 +657,20 @@
       var av = a.ok ? (a[srt.k] == null ? -1 : a[srt.k]) : -2, bv = b.ok ? (b[srt.k] == null ? -1 : b[srt.k]) : -2;
       return srt.dir * (av - bv);
     });
-    var maxT = Math.max.apply(null, rows.map(function (r) { return r.ok ? r.total : 0; }).concat([1]));
     function th(k, l, cls) { return '<th class="s ' + (cls || "") + '" data-sort="' + k + '">' + l + (srt.k === k ? '<span class="ar">' + (srt.dir < 0 ? "↓" : "↑") + "</span>" : "") + "</th>"; }
     var body = sorted.map(function (r) {
-      if (!r.ok) return '<tr data-v="' + r.id + '"><td class="cl">' + esc(r.name) + '</td><td colspan="7">' + (r.err ? '<span class="down">Couldn\'t load: ' + esc(r.err).slice(0, 120) + "</span>" : '<span class="skel"></span>') + "</td></tr>";
-      var pc = pacing(r);
+      var bud = '<td class="r">' + budgetInput(r.id) + "</td>";
+      if (!r.ok) return '<tr data-v="' + r.id + '"><td class="cl">' + esc(r.name) + '</td><td colspan="5">' + (r.err ? '<span class="down">Couldn\'t load: ' + esc(r.err).slice(0, 120) + "</span>" : '<span class="skel"></span>') + "</td>" + bud + "<td></td></tr>";
       return '<tr data-v="' + r.id + '"><td class="cl">' + esc(r.name) + "<small>" + r.d.counts.meta + " Meta · " + r.d.counts.google + " Google</small></td>" +
         '<td class="r num">' + usd(r.meta) + '</td><td class="r num">' + (r.d.counts.google ? usd(r.google) : '<span style="color:var(--faint)">—</span>') + "</td>" +
         '<td class="r num"><b>' + usd(r.total) + "</b>" + chg(r.total, r.totalPrev) + "</td>" +
         '<td class="r num">' + int(r.leads) + chg(r.leads, r.leadsPrev) + "</td>" +
         '<td class="r num">' + (r.cpl != null ? usd2.format(r.cpl) : "—") + chg(r.cpl || 0, r.cplPrev, true) + "</td>" +
-        (anyBudget ? '<td class="r num">' + (pc ? Math.round(pc.used * 100) + "% <small style=\"color:var(--muted)\">of " + usd0.format(pc.budget) + "</small>" : '<span style="color:var(--faint)">—</span>') + "</td>" : "") +
-        '<td style="width:110px"><div class="bar"><span style="width:' + (r.total / maxT * 100).toFixed(1) + '%"></span></div></td></tr>';
+        bud + "<td>" + paceCell(r) + "</td></tr>";
     }).join("");
-    h += '<section class="grid"><div class="card"><div class="card-h"><div><h2>Performance by client</h2><p>' + fmtRange(resolve(S.range).start, resolve(S.range).end) + '<span class="no-print"> · click a client to open it</span></p></div></div><div class="tbl-wrap"><table><thead><tr>' +
-      th("name", "Client") + th("meta", "Meta", "r") + th("google", "Google", "r") + th("total", "Total spend", "r") + th("leads", "Leads", "r") + th("cpl", "CPL", "r") + (anyBudget ? '<th class="r">Budget used</th>' : "") + "<th>Share</th></tr></thead><tbody>" + body + "</tbody>" +
-      '<tfoot><tr><td>All clients</td><td class="r num">' + usd(t.meta) + '</td><td class="r num">' + usd(t.google) + '</td><td class="r num">' + usd(t.total) + '</td><td class="r num">' + int(t.leads) + '</td><td class="r num">' + (t.cpl != null ? usd2.format(t.cpl) : "—") + "</td>" + (anyBudget ? "<td></td>" : "") + "<td></td></tr></tfoot></table></div></div></section>";
+    h += '<section class="grid"><div class="card"><div class="card-h"><div><h2>Performance by client</h2><p>' + fmtRange(resolve(S.range).start, resolve(S.range).end) + '<span class="no-print"> · click a client to open it</span></p></div><span class="hint no-print">Type a budget in the Budget column · saves on Enter</span></div><div class="tbl-wrap"><table><thead><tr>' +
+      th("name", "Client") + th("meta", "Meta", "r") + th("google", "Google", "r") + th("total", "Total spend", "r") + th("leads", "Leads", "r") + th("cpl", "CPL", "r") + th("budget", "Monthly budget", "r") + th("used", isMtd ? "Pace" : "Pace (this month)") + "</tr></thead><tbody>" + body + "</tbody>" +
+      '<tfoot><tr><td>All clients</td><td class="r num">' + usd(t.meta) + '</td><td class="r num">' + usd(t.google) + '</td><td class="r num">' + usd(t.total) + '</td><td class="r num">' + int(t.leads) + '</td><td class="r num">' + (t.cpl != null ? usd2.format(t.cpl) : "—") + '</td><td class="r num">' + (bSum ? usd0.format(bSum) : "") + "</td><td>" + (bSum && isMtd ? '<small style="color:var(--muted);font-weight:600">' + Math.round(bUsed * 100) + "% of budgeted clients</small>" : "") + "</td></tr></tfoot></table></div></div></section>";
 
     // chart + alerts
     var ok = rows.filter(function (r) { return r.ok; }), dates = ok.length ? ok[0].d.dates : [];
@@ -614,6 +679,15 @@
     $("view").innerHTML = h;
     drawChart(dates, vals);
     setPrint("All clients");
+  }
+
+  function paceCell(r) {
+    if (!r.budget) return '<small style="color:var(--faint)">No budget</small>';
+    var pc = pacing(r);
+    if (!pc) return '<small>' + usd0.format(r.budget) + "/mo · pace shows on This month</small>";
+    var lbl = pc.st === "over" ? '<b class="down">Over pace</b>' : pc.st === "under" ? '<b style="color:var(--warn)">Under pace</b>' : '<b class="up">On pace</b>';
+    return '<div class="pace"><div class="track"><span class="' + pc.st + '" style="width:' + Math.min(100, pc.used * 100) + '%"></span><i style="left:' + Math.min(100, pc.target * 100) + '%"></i></div>' +
+      "<small>" + Math.round(pc.used * 100) + "% · " + lbl + " · " + usd0.format(Math.max(0, pc.remaining)) + " left</small></div>";
   }
 
   function alertsCard(rows) {
@@ -687,12 +761,15 @@
     if (pc) {
       var cls = pc.st === "over" ? "down" : pc.st === "under" ? "chg" : "up";
       h += '<section class="grid"><div class="card"><div class="card-h"><div><h2>' + pc.mi.name + ' budget</h2><p>Meta + Google · ' + pc.mi.left + (pc.mi.left === 1 ? " day" : " days") + ' left in the month</p></div><span class="pill ' + (pc.st === "on" ? "google" : pc.st === "over" ? "over" : "meta") + '">' + (pc.st === "over" ? "Over pace" : pc.st === "under" ? "Under pace" : "On pace") + '</span></div><div class="bud"><div class="bud-row">' +
-        '<div><div class="l">Budget</div><div class="v num">' + usd0.format(pc.budget) + "</div></div>" +
+        '<div><div class="l">Budget</div><div class="v num">' + budgetInput(id, true) + "</div></div>" +
         '<div><div class="l">Spent</div><div class="v num">' + usd0.format(r.total) + '</div><div class="note">' + (pc.used * 100).toFixed(1) + "% used</div></div>" +
         '<div><div class="l">Remaining</div><div class="v num">' + usd0.format(pc.remaining) + "</div></div>" +
         '<div><div class="l">Ideal daily spend</div><div class="v num">' + usd0.format(pc.daily) + "</div></div></div>" +
         '<div class="track"><span style="width:' + Math.min(100, pc.used * 100) + '%"></span><i style="left:' + Math.min(100, pc.target * 100) + '%"></i></div>' +
         (pc.mi.day < 3 ? '<div class="note">Projection shows from day 3 of the month · marker = where spend should be today</div>' : '<div class="note">Projected month total: <b class="' + cls + '">' + usd0.format(pc.proj) + "</b> · marker = where spend should be today</div>") + "</div></div></section>";
+    } else {
+      h += '<section class="grid"><div class="card"><div class="card-h" style="padding-bottom:18px;align-items:center"><div><h2>Monthly budget</h2><p>' +
+        (r.budget ? "Pacing shows when the period is This month" : "Set this client's monthly ad budget (Meta + Google) to track pacing") + "</p></div>" + budgetInput(id, true) + "</div></div></section>";
     }
     var accs = d.accounts.slice().sort(function (a, b) { return b.spend - a.spend; });
     var body = accs.map(function (a) {
@@ -717,6 +794,7 @@
 
   /* ---------- events ---------- */
   document.addEventListener("click", function (e) {
+    if (e.target.closest(".bin")) return; // budget editor inside a clickable row
     var t = e.target.closest("[data-v],[data-sort],[data-metric],[data-act]"); if (!t) return;
     if (t.dataset.act === "manage") return openMng();
     if (t.dataset.act === "retry") { delete S.data[periodKey() + "|" + S.view]; return loadAll(); }
@@ -781,7 +859,7 @@
     var own = owners(draft.sel);
     $("mng-list").innerHTML = list.length ? list.map(function (c) {
       var on = draft.sel.indexOf(c.id) >= 0, ads = c.meta.length + c.google.length;
-      return '<div class="mitem"><label class="mrow"><input type="checkbox" data-id="' + c.id + '"' + (on ? " checked" : "") + '><span><span class="nm">' + esc(c.name) + '</span><br><span class="ac">' + (ads ? c.meta.length + " Meta Ads · " + c.google.length + " Google Ads" : "No ad accounts connected") + '</span></span><span class="bg">Monthly budget $<input type="number" min="0" step="100" inputmode="decimal" data-bud="' + c.id + '" value="' + (draft.bud[c.id] || "") + '" placeholder="optional"></span></label>' + (on && ads ? accList(c, own) : "") + "</div>";
+      return '<div class="mitem"><label class="mrow"><input type="checkbox" data-id="' + c.id + '"' + (on ? " checked" : "") + '><span><span class="nm">' + esc(c.name) + '</span><br><span class="ac">' + (ads ? c.meta.length + " Meta Ads · " + c.google.length + " Google Ads" : "No ad accounts connected") + '</span></span>' + (draft.bud[c.id] ? '<span class="bg">' + usd0.format(draft.bud[c.id]) + "/mo</span>" : "") + "</label>" + (on && ads ? accList(c, own) : "") + "</div>";
     }).join("") : '<div class="msg">' + (S.clients && S.clients.length ? "No client matches your search." : "No projects found in Reportei.") + "</div>";
     $("mng-cnt").textContent = draft.sel.length + " selected";
   }
@@ -798,7 +876,6 @@
     drawMngKeep();
   });
   function drawMngKeep() { var st = $("mng-list").scrollTop; drawMng(); $("mng-list").scrollTop = st; }
-  $("mng-list").addEventListener("input", function (e) { var id = e.target.dataset.bud; if (id) { var v = Number(e.target.value); if (v > 0) draft.bud[id] = v; else delete draft.bud[id]; } });
   $("mng-all").addEventListener("click", function () {
     var q = $("mng-q").value.trim().toLowerCase();
     (S.clients || []).forEach(function (c) { if ((!q || c.name.toLowerCase().indexOf(q) >= 0) && draft.sel.indexOf(c.id) < 0) draft.sel.push(c.id); }); drawMng();
@@ -807,8 +884,7 @@
   $("mng-save").addEventListener("click", function () {
     var names = {}; (S.clients || []).forEach(function (c) { names[c.id] = c.name; });
     S.sel = draft.sel.slice().sort(function (a, b) { return String(names[a]).localeCompare(String(names[b])); });
-    S.budgets = draft.bud; S.acc = draft.acc; lsSet(LS.sel, S.sel); lsSet(LS.bud, S.budgets); lsSet(LS.acc, S.acc); closeMng(); loadAll();
-    budgetsApi({ clients: S.budgets }).then(function (b) { S.server = b; }, function (er) { if (S.server && S.server.storage) alert(budgetErr(er)); });
+    S.acc = draft.acc; lsSet(LS.sel, S.sel); lsSet(LS.acc, S.acc); closeMng(); loadAll();
   });
 
   function boot() {
