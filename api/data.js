@@ -270,27 +270,22 @@ const CAMP_METRICS = ["spend"].concat(LEAD_METRICS);
 const campTable = (id) => ({ id, reference_key: "fb_ads:insights_by_campaign", component: "datatable_v1",
   metrics: CAMP_METRICS, dimensions: [{ field: "campaign" }] });
 
-// Finds the rows of the wanted campaigns in a datatable answer, whatever its exact shape.
-function campRows(w, wanted, part) {
-  const src = part === "prev" ? (w && w.comparison) || null : w;
-  const rows = [];
-  const walk = (x, depth) => {
-    if (!x || depth > 6) return;
-    if (Array.isArray(x)) { x.forEach((y) => walk(y, depth + 1)); return; }
-    if (typeof x !== "object") return;
-    const name = x.campaign != null ? x.campaign : x.campaign_name != null ? x.campaign_name : x.name;
-    const nm = typeof name === "object" && name ? (name.name || name.value || name.label) : name;
-    if (nm != null && wanted.has(normName(nm)) && CAMP_METRICS.some((m) => m in x || (x.metrics && m in x.metrics))) { rows.push(x); return; }
-    Object.keys(x).forEach((k) => { if (!(part !== "prev" && k === "comparison")) walk(x[k], depth + 1); });
-  };
-  walk(src, 0);
-  return rows;
-}
-function campSum(rows, metrics) {
-  const val = (r, m) => { let v = r.metrics && m in r.metrics ? r.metrics[m] : r[m];
-    if (v && typeof v === "object") v = v.value != null ? v.value : v.values;
-    return Number(v) || 0; };
-  return rows.reduce((t, r) => t + metrics.reduce((a, m) => a + val(r, m), 0), 0);
+// Totals of the wanted campaigns in a campaign table answer:
+// { values: [[campaign, spend, msg, form], ...], columns_order: ["campaign", "spend", ...] }
+function campTotals(w, wanted, part) {
+  const src = part === "prev" ? (w && w.comparison) || {} : w || {};
+  const cols = src.columns_order || (w && w.columns_order) || ["campaign"].concat(CAMP_METRICS);
+  const ci = cols.indexOf("campaign"), out = { rows: 0, spend: 0, leads: 0 };
+  (src.values || []).forEach((r) => {
+    if (!Array.isArray(r) || !wanted.has(normName(r[ci < 0 ? 0 : ci]))) return;
+    out.rows++;
+    cols.forEach((c, i) => {
+      const v = Number(r[i]) || 0;
+      if (c === "spend") out.spend += v;
+      else if (LEAD_METRICS.indexOf(c) >= 0) out.leads += v;
+    });
+  });
+  return out;
 }
 
 async function fetchCampaignLocation(loc, p, key, debug) {
@@ -301,15 +296,15 @@ async function fetchCampaignLocation(loc, p, key, debug) {
     body: JSON.stringify(Object.assign({ start, end, widgets }, cmp ? { comparison_start: p.prevStart, comparison_end: p.prevEnd } : {}))
   }, loc.name).then((r) => r.json()).then((j) => j.data || {});
   const data = await call(p.start, p.end, true, [campTable("camp")]);
-  const rows = campRows(data.camp, wanted), prev = campRows(data.camp, wanted, "prev");
+  const now = campTotals(data.camp, wanted), prev = campTotals(data.camp, wanted, "prev");
   // Daily breakdown: one small call per day (skipped for long custom periods).
   let days = p.dates.map(() => 0), leadsDays = p.dates.map(() => 0), daily = false;
   if (p.dates.length <= 35) {
     try {
       for (let i = 0; i < p.dates.length; i++) {
         const d = p.dates[i], dd = await call(d, d, false, [campTable("day")]);
-        const r = campRows(dd.day, wanted);
-        days[i] = campSum(r, ["spend"]); leadsDays[i] = campSum(r, LEAD_METRICS);
+        const r = campTotals(dd.day, wanted);
+        days[i] = Math.round(r.spend * 100) / 100; leadsDays[i] = r.leads;
       }
       daily = true;
     } catch (e) { days = p.dates.map(() => 0); leadsDays = p.dates.map(() => 0); }
@@ -317,13 +312,13 @@ async function fetchCampaignLocation(loc, p, key, debug) {
   const out = {
     k: loc.k,
     name: loc.name,
-    spend: Math.round(campSum(rows, ["spend"]) * 100) / 100,
-    spendPrev: Math.round(campSum(prev, ["spend"]) * 100) / 100,
-    conv: campSum(rows, LEAD_METRICS),
-    convPrev: campSum(prev, LEAD_METRICS),
+    spend: Math.round(now.spend * 100) / 100,
+    spendPrev: Math.round(prev.spend * 100) / 100,
+    conv: now.leads,
+    convPrev: prev.leads,
     days, leadsDays,
     hour: new Array(24).fill(1),
-    campaigns: { account: loc.account, names: loc.campaignsOnly, found: rows.length, daily }
+    campaigns: { account: loc.account, names: loc.campaignsOnly, found: now.rows, daily }
   };
   if (debug) out.campaigns.raw = data;
   return out;
