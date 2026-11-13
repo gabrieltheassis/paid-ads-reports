@@ -11,9 +11,27 @@ const LOCATIONS = [
   { k: "Marlborough", name: "Marlborough", integration: 3824099 },
   { k: "Medford",     name: "Medford",     integration: 3824934 },
   { k: "Mitsubishi",  name: "Mitsubishi",  integration: 3824969 },
-  { k: "DougCar",     name: "Doug Car",    integration: 3824981 },
+  // Doug Car = "[DG] Page Doug Cars - Massachusetts" (everything) + only the LEADS of the two 3128 campaigns
+  // that run inside the "[DG] Icon - Medford MA" ad account (see EXTRA_LEADS below).
+  { k: "DougCar",     name: "Doug Car",    integration: 3824641 },
   { k: "Nissan",      name: "Nissan",      integration: 3824943 },
   { k: "Danbury",     name: "Danbury",     integration: 3824642 }
+];
+
+// Leads from specific campaigns of another ad account, added to a location (leads only, no spend).
+// Campaign names are matched ignoring case and extra spaces.
+const EXTRA_LEADS = {
+  DougCar: [
+    { integration: 3862394, account: "[DG] Icon - Medford MA",
+      campaigns: ["[SP] [SALES] EXTRA - 3128 - off", "[SP] [SALES] EXTRA - 3128"] }
+  ]
+};
+const LEAD_METRICS = ["actions:onsite_conversion.messaging_conversation_started_7d", "actions:onsite_conversion.lead_grouped"];
+const CAMPAIGN_WIDGETS = [
+  { id: "camp", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "bar",
+    metrics: LEAD_METRICS, dimensions: [{ field: "campaign_name" }] },
+  { id: "camp_by_date", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "line",
+    metrics: LEAD_METRICS, dimensions: [{ field: "date_start" }, { field: "campaign_name" }] }
 ];
 
 const WIDGETS = [
@@ -204,6 +222,71 @@ async function fetchLocation(loc, p, key) {
   };
 }
 
+const normName = (s) => String(s || "").toLowerCase().replace(/\s+/g, " ").trim();
+
+// Sum of a chart's series at the label positions that match the wanted campaigns.
+function sumChart(w, wanted, part) {
+  const src = part === "prev" ? (w && w.comparison) || {} : w || {};
+  const labels = src.labels || (w && w.labels) || [];
+  let total = 0;
+  labels.forEach((lab, i) => {
+    if (!wanted.has(normName(lab))) return;
+    (src.values || []).forEach((s) => { total += Number(((s && s.data) || [])[i]) || 0; });
+  });
+  return total;
+}
+
+// Daily leads of the wanted campaigns, if Reportei returns a date × campaign breakdown (else null).
+function dailyFromChart(w, wanted, dates) {
+  if (!w || !Array.isArray(w.labels) || !w.labels.length) return null;
+  const map = {}; let found = false;
+  w.labels.forEach((lab, i) => {
+    const d = (Array.isArray(lab) ? lab : [String(lab)]).join(" ").match(/\d{4}-\d{2}-\d{2}/);
+    const name = Array.isArray(lab) ? lab.find((x) => !/^\d{4}-\d{2}-\d{2}/.test(String(x))) : String(lab).replace(/\d{4}-\d{2}-\d{2}\S*/, "").replace(/^[\s|,;-]+|[\s|,;-]+$/g, "");
+    if (!d || !wanted.has(normName(name))) return;
+    found = true;
+    (w.values || []).forEach((s) => { map[d[0]] = (map[d[0]] || 0) + (Number(((s && s.data) || [])[i]) || 0); });
+  });
+  return found ? dates.map((x) => map[x] || 0) : null;
+}
+
+async function fetchExtraLeads(x, p, key) {
+  const wanted = new Set(x.campaigns.map(normName));
+  const call = (widgets) => postWithRetry(`${API}/integrations/${x.integration}/widgets/value`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd, widgets })
+  }, x.account).then((r) => r.json()).then((j) => j.data || {});
+  let data;
+  try { data = await call(CAMPAIGN_WIDGETS); }
+  catch (e) { data = await call(CAMPAIGN_WIDGETS.slice(0, 1)); } // date × campaign breakdown rejected → totals only
+  return {
+    conv: sumChart(data.camp, wanted), convPrev: sumChart(data.camp, wanted, "prev"),
+    leadsDays: dailyFromChart(data.camp_by_date, wanted, p.dates),
+    raw: data
+  };
+}
+
+// Adds the extra campaign leads to a location. Never breaks the location if the extra call fails.
+async function addExtras(loc, p, key, debug) {
+  const list = EXTRA_LEADS[loc.k];
+  if (!list) return loc;
+  loc.extras = [];
+  for (const x of list) {
+    try {
+      const e = await fetchExtraLeads(x, p, key);
+      loc.conv += e.conv; loc.convPrev += e.convPrev;
+      if (e.leadsDays) loc.leadsDays = loc.leadsDays.map((v, i) => v + (e.leadsDays[i] || 0));
+      const info = { account: x.account, campaigns: x.campaigns, leads: e.conv, leadsPrev: e.convPrev, daily: !!e.leadsDays };
+      if (debug) info.raw = e.raw;
+      loc.extras.push(info);
+    } catch (err) {
+      loc.extras.push({ account: x.account, error: String(err.message || err).slice(0, 200) });
+    }
+  }
+  return loc;
+}
+
 // Last good answer per period, kept while this server instance is warm (used if Reportei is busy).
 const lastGood = new Map();
 
@@ -215,11 +298,12 @@ module.exports = async (req, res) => {
   }
   try {
     const p = periodsFrom(req.query || {});
-    const cacheKey = [p.start, p.end, p.prevStart, p.prevEnd].join("|");
+    const debug = !!(req.query && req.query.debug);
+    const cacheKey = [p.start, p.end, p.prevStart, p.prevEnd, debug ? "d" : ""].join("|");
     let locs;
     try {
       locs = [];
-      for (const l of LOCATIONS) locs.push(await fetchLocation(l, p, key));
+      for (const l of LOCATIONS) locs.push(await addExtras(await fetchLocation(l, p, key), p, key, debug));
     } catch (err) {
       const stale = lastGood.get(cacheKey);
       if (!stale) throw err;
