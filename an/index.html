@@ -930,6 +930,13 @@
       var total = v.total > 0 ? +v.total : sumObj(locs);
       return total > 0 || Object.keys(locs).length ? { total: total, locs: locs } : null;
     }
+    /* Budgets edited on the agency dashboard (/agency) are saved on the server and loaded here; the numbers above are only the fallback. */
+    function loadBudgets() {
+      return fetch("/api/budgets", { cache: "no-store", headers: ACCESS ? { "x-access-code": ACCESS } : {} })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (b) { if (!b || !b.main || !b.an) return; MONTHLY_BUDGET = +b.an.meta || 0; if (S.month) renderBudget(); })
+        .catch(function () {});
+    }
     function budgetInfo() { return MONTHLY_BUDGET > 0 ? { total: MONTHLY_BUDGET, locs: {}, src: "fixed" } : null; }
     function monthMeta() {
       var D = S.month, y = +D.start.slice(0, 4), mo = +D.start.slice(5, 7), dim = new Date(Date.UTC(y, mo, 0)).getUTCDate(), dayN = +D.end.slice(8, 10);
@@ -956,7 +963,7 @@
       var G = D.google || null, gOk = !!(G && !G.error && G.spend != null), gB = GOOGLE_MONTHLY_BUDGET;
       var metaS = t.S, gS = gOk ? G.spend : 0, totB = b.total + gB, spent = metaS + gS;
       var pct = totB ? spent / totB * 100 : 0, left = totB - spent, st = paceStatus(spent, totB, m);
-      var perDay = DAILY_TARGET;
+      var perDay = totB / DAYS_IN_PLAN;
       var mPct = totB ? metaS / totB * 100 : 0, gPct = totB ? gS / totB * 100 : 0;
       function share(x) { return spent > 0 ? Math.round(x / spent * 100) + "% of spend" : ""; }
       function platRow(cls, name, sub, s, a, ok) {
@@ -977,7 +984,7 @@
           '<div><span>Total budget</span><b class="num">' + usd(totB, 0) + '</b><em>Meta Ads</em></div>' +
           '<div><span>Total spent</span><b class="num">' + usd(spent, 0) + '</b><em>' + pct.toFixed(1) + '% used</em></div>' +
           '<div class="hl"><span>' + (left >= 0 ? "Remaining" : "Over budget") + '</span><b class="num">' + usd(Math.abs(left), 0) + '</b><em>' + (left >= 0 ? (100 - pct).toFixed(1) + "% left" : "") + '</em></div>' +
-          '<div><span>Ideal daily spend</span><b class="num">' + usd(perDay, 0) + '</b><em>fixed daily target</em></div>' +
+          '<div><span>Ideal daily spend</span><b class="num">' + usd(perDay, 0) + '</b><em>budget ÷ ' + DAYS_IN_PLAN + ' days</em></div>' +
         '</div>' +
         '<div class="stk" role="img" aria-label="Meta ' + usd(metaS, 0) + ', Google ' + usd(gS, 0) + ' of ' + usd(totB, 0) + '; expected by today ' + m.expectPct.toFixed(0) + '%">' +
           '<span class="m" style="width:' + Math.min(100, mPct) + '%"></span><span class="g" style="width:' + Math.max(0, Math.min(100 - mPct, gPct)) + '%"></span>' +
@@ -1096,8 +1103,8 @@
     window.PA_refresh = function () { return load(false); };
     /* ================= Boot ================= */
     route();
-    load(true);
-    setInterval(function () { if (!document.hidden) load(false); }, POLL_MS);
+    loadBudgets(); load(true);
+    setInterval(function () { if (!document.hidden) { loadBudgets(); load(false); } }, POLL_MS);
     document.addEventListener("visibilitychange", function () { if (!document.hidden && S.nextAt && Date.now() > S.nextAt) load(false); });
   })();
 </script>
