@@ -11,22 +11,25 @@ const LOCATIONS = [
   { k: "Marlborough", name: "Marlborough", integration: 3824099 },
   { k: "Medford",     name: "Medford",     integration: 3824934 },
   { k: "Mitsubishi",  name: "Mitsubishi",  integration: 3824969 },
-  // Doug Car = "[DG] Page Doug Cars - Massachusetts" (everything) + only the LEADS of the two 3128 campaigns
-  // that run inside the "[DG] Icon - Medford MA" ad account (see EXTRA_LEADS below).
-  { k: "DougCar",     name: "Doug Car",    integration: 3824641 },
+  // Icon Medford 2 (#3128) = ONLY the two 3128 campaigns inside the "[DG] Icon - Medford MA" ad account
+  // (ad account 1858795594154712): spend, leads and daily numbers come from these campaigns alone.
+  { k: "DougCar",     name: "Icon Medford 2", integration: 3862394, account: "[DG] Icon - Medford MA",
+    campaignsOnly: ["[SP] [SALES] EXTRA - 3128 - off", "[SP] [SALES] EXTRA - 3128"] },
   { k: "Nissan",      name: "Nissan",      integration: 3824943 },
   { k: "Danbury",     name: "Danbury",     integration: 3824642 }
 ];
 
 // Leads from specific campaigns of another ad account, added to a location (leads only, no spend).
 // Campaign names are matched ignoring case and extra spaces.
-const EXTRA_LEADS = {
-  DougCar: [
-    { integration: 3862394, account: "[DG] Icon - Medford MA",
-      campaigns: ["[SP] [SALES] EXTRA - 3128 - off", "[SP] [SALES] EXTRA - 3128"] }
-  ]
-};
+const EXTRA_LEADS = {};
 const LEAD_METRICS = ["actions:onsite_conversion.messaging_conversation_started_7d", "actions:onsite_conversion.lead_grouped"];
+// Spend by campaign (total and per day), for locations built only from specific campaigns.
+const CAMPAIGN_SPEND_WIDGETS = [
+  { id: "camp_spend", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "bar",
+    metrics: ["spend"], dimensions: [{ field: "campaign_name" }] },
+  { id: "camp_spend_by_date", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "line",
+    metrics: ["spend"], dimensions: [{ field: "date_start" }, { field: "campaign_name" }] }
+];
 const CAMPAIGN_WIDGETS = [
   { id: "camp", reference_key: "fb_ads:spend_by_date", component: "chart_v1", chart_type: "bar",
     metrics: LEAD_METRICS, dimensions: [{ field: "campaign_name" }] },
@@ -52,7 +55,7 @@ const WIDGETS = [
 const API2 = "https://app.reportei.com/api/v2";
 const GOOGLE_PROJECTS = {
   Marlborough: 1341647, Medford: 1342532, Mitsubishi: 1342545,
-  DougCar: 1342549, Nissan: 1342535, Danbury: 1342406
+  Nissan: 1342535, Danbury: 1342406 // Icon Medford 2 (#3128): Meta campaigns only, no Google
 };
 const isGoogleAds = (slug) => /google[_-]?ads|adwords/i.test(slug || "");
 let googleMetricCache = {}; // slug -> metric definition (cost/spend number widget)
@@ -267,6 +270,36 @@ async function fetchExtraLeads(x, p, key) {
   };
 }
 
+// A location made ONLY of specific campaigns of one ad account (spend + leads of those campaigns).
+async function fetchCampaignLocation(loc, p, key, debug) {
+  const wanted = new Set(loc.campaignsOnly.map(normName));
+  const call = (widgets) => postWithRetry(`${API}/integrations/${loc.integration}/widgets/value`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify({ start: p.start, end: p.end, comparison_start: p.prevStart, comparison_end: p.prevEnd, widgets })
+  }, loc.name).then((r) => r.json()).then((j) => j.data || {});
+  const totalsOnly = [CAMPAIGN_SPEND_WIDGETS[0], CAMPAIGN_WIDGETS[0]];
+  let data;
+  try { data = await call(CAMPAIGN_SPEND_WIDGETS.concat(CAMPAIGN_WIDGETS)); }
+  catch (e) { data = await call(totalsOnly); } // date × campaign breakdown rejected → totals only
+  const spendDays = dailyFromChart(data.camp_spend_by_date, wanted, p.dates);
+  const leadsDays = dailyFromChart(data.camp_by_date, wanted, p.dates);
+  const out = {
+    k: loc.k,
+    name: loc.name,
+    spend: sumChart(data.camp_spend, wanted),
+    spendPrev: sumChart(data.camp_spend, wanted, "prev"),
+    conv: sumChart(data.camp, wanted),
+    convPrev: sumChart(data.camp, wanted, "prev"),
+    days: spendDays || p.dates.map(() => 0),
+    leadsDays: leadsDays || p.dates.map(() => 0),
+    hour: new Array(24).fill(1),
+    campaigns: { account: loc.account, names: loc.campaignsOnly, daily: !!(spendDays && leadsDays) }
+  };
+  if (debug) out.campaigns.raw = data;
+  return out;
+}
+
 // Adds the extra campaign leads to a location. Never breaks the location if the extra call fails.
 async function addExtras(loc, p, key, debug) {
   const list = EXTRA_LEADS[loc.k];
@@ -303,7 +336,9 @@ module.exports = async (req, res) => {
     let locs;
     try {
       locs = [];
-      for (const l of LOCATIONS) locs.push(await addExtras(await fetchLocation(l, p, key), p, key, debug));
+      for (const l of LOCATIONS)
+        locs.push(l.campaignsOnly ? await fetchCampaignLocation(l, p, key, debug)
+                                  : await addExtras(await fetchLocation(l, p, key), p, key, debug));
     } catch (err) {
       const stale = lastGood.get(cacheKey);
       if (!stale) throw err;
