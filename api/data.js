@@ -47,8 +47,8 @@ const WIDGETS = [
 // automatically, so new accounts show up on the dashboard as soon as they are connected in Reportei.
 const API2 = "https://app.reportei.com/api/v2";
 const GOOGLE_PROJECTS = {
-  Marlborough: 1341647, Medford: 1342532, Mitsubishi: 1342545,
-  Nissan: 1342535, Danbury: 1342406 // Icon Medford 2 (#3128): Meta campaigns only, no Google
+  Marlborough: 1347259, Medford: 1347207, Mitsubishi: 1347236,
+  Nissan: 1347249 // Danbury and Icon Medford 2 (#3128): Meta only, no Google
 };
 const isGoogleAds = (slug) => /google[_-]?ads|adwords/i.test(slug || "");
 let googleMetricCache = {}; // slug -> metric definition (cost/spend number widget)
@@ -78,14 +78,16 @@ async function getAllPages(url, key, step) {
   return out;
 }
 
-async function googleIntegrations(key) {
+async function googleIntegrations(key, checked) {
   const out = [];
   for (const [k, pid] of Object.entries(GOOGLE_PROJECTS)) {
     const list = await getAllPages(`${API2}/integrations?project_id=${pid}`, key, "integrations");
     list.forEach((i) => {
-      if (isGoogleAds(i.slug) && Number(i.project_id) === pid && (!i.status || /^(active|1|true)$/i.test(String(i.status))))
-        out.push({ k, id: i.id, slug: i.slug, name: i.name });
+      const used = isGoogleAds(i.slug) && Number(i.project_id) === pid && (!i.status || /^(active|1|true)$/i.test(String(i.status)));
+      if (checked) checked.push({ location: k, project: pid, id: i.id, name: i.name, slug: i.slug, status: i.status, project_id: i.project_id, used });
+      if (used) out.push({ k, id: i.id, slug: i.slug, name: i.name });
     });
+    if (checked && !list.length) checked.push({ location: k, project: pid, note: "no integrations returned for this project" });
   }
   return out;
 }
@@ -107,8 +109,9 @@ async function googleCostMetric(slug, key) {
   return best[1];
 }
 
-async function fetchGoogle(p, key) {
-  const ints = await googleIntegrations(key);
+async function fetchGoogle(p, key, debug) {
+  const checked = debug ? [] : null;
+  const ints = await googleIntegrations(key, checked);
   let spend = 0, spendPrev = 0;
   for (const i of ints) {
     const m = await googleCostMetric(i.slug, key);
@@ -123,7 +126,8 @@ async function fetchGoogle(p, key) {
   }
   return {
     spend: Math.round(spend * 100) / 100, spendPrev: Math.round(spendPrev * 100) / 100,
-    accounts: ints.length, locations: [...new Set(ints.map((i) => i.k))]
+    accounts: ints.length, locations: [...new Set(ints.map((i) => i.k))],
+    ...(checked ? { checked } : {})
   };
 }
 
@@ -372,7 +376,7 @@ module.exports = async (req, res) => {
     }
     // Google Ads total: never blocks the Meta numbers if it fails.
     let google = null;
-    try { google = await fetchGoogle(p, key); }
+    try { google = await fetchGoogle(p, key, debug); }
     catch (err) { google = { error: String(err.message || err) }; }
     // Cache on Vercel's edge for 5 min (keeps the page "live" without hammering the Reportei API).
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
